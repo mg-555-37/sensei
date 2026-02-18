@@ -6,45 +6,45 @@
 
 # Default owner for everything
 
-- @ascentusoss
+- @madiovem-555
 
 # Core source code
 
-/src/ @ascentusoss
+/src/ @madiovem-555
 
 # CLI commands
 
-/src/cli/ @ascentusoss
+/src/cli/ @madiovem-555
 
 # Analysts and detectors
 
-/src/analistas/ @ascentusoss
+/src/analistas/ @madiovem-555
 
 # Guardian integrity system
 
-/src/guardian/ @ascentusoss
+/src/guardian/ @madiovem-555
 
 # Tests
 
-/tests/ @ascentusoss
+/tests/ @madiovem-555
 
 # Documentation
 
-/docs/ @ascentusoss
-\*.md @ascentusoss
+/docs/ @madiovem-555
+\*.md @madiovem-555
 
 # Configuration files
 
-/_.json @ascentusoss
-/_.ts @ascentusoss
-/\*.js @ascentusoss
+/_.json @madiovem-555
+/_.ts @madiovem-555
+/\*.js @madiovem-555
 
 # CI/CD workflows
 
-/.github/ @ascentusoss
+/.github/ @madiovem-555
 
 # Security-sensitive files
 
-/SECURITY.md @ascentusoss
-/.github/workflows/release.yml @ascentusoss
-/.github/workflows/compliance.yml @ascentusoss
+/SECURITY.md @madiovem-555
+/.github/workflows/release.yml @madiovem-555
+/.github/workflows/compliance.yml @madiovem-555

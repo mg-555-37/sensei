@@ -20,7 +20,7 @@ updates:
       - "dependencies"
       - "automated"
     reviewers:
-      - "ascentusoss"
+      - "madiovem-555"
     groups:
       # Group all development dependencies
       dev-dependencies:
@@ -74,4 +74,4 @@ updates:
       - "dependencies"
       - "automated"
     reviewers:
-      - "ascentusoss"
+      - "madiovem-555"

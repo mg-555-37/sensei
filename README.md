@@ -24,26 +24,26 @@
 ---
 
 [![CI](https://github.com/madiovem-555/doutor/actions/workflows/ci.yml?badge.svg?branch=main)](https://github.com/i-lopos/doutor/actions/workflows/ci.yml)
-[![Build](https://github.com/madiovem-555/doutor/actions/workflows/build.yml?badge.svg?branch=main)](https://github.com/ascentusoss/doutor/actions/workflows/build.yml)
-[![Monitor Deps](https://github.com/madiovem-555/doutor/actions/workflows/monitor-deps.yml?badge.svg)](https://github.com/ascentusoss/doutor/actions/workflows/monitor-deps.yml)
-[![Compliance](https://github.com/madiovem-555/doutor/actions/workflows/compliance.yml?badge.svg?branch=main)](https://github.com/ascentusoss/doutor/actions/workflows/compliance.yml)
-[![License Gate](https://github.com/madiovem-555/doutor/actions/workflows/license-gate.yml?badge.svg)](https://github.com/ascentusoss/doutor/actions/workflows/license-gate.yml)
+[![Build](https://github.com/madiovem-555/doutor/actions/workflows/build.yml?badge.svg?branch=main)](https://github.com/madiovem-555/doutor/actions/workflows/build.yml)
+[![Monitor Deps](https://github.com/madiovem-555/doutor/actions/workflows/monitor-deps.yml?badge.svg)](https://github.com/madiovem-555/doutor/actions/workflows/monitor-deps.yml)
+[![Compliance](https://github.com/madiovem-555/doutor/actions/workflows/compliance.yml?badge.svg?branch=main)](https://github.com/madiovem-555/doutor/actions/workflows/compliance.yml)
+[![License Gate](https://github.com/madiovem-555/doutor/actions/workflows/license-gate.yml?badge.svg)](https://github.com/madiovem-555/doutor/actions/workflows/license-gate.yml)
 
 ## 🌟 Status do Projeto
 
 **Versão Atual:** 0.3.7 | **Node.js:** >=24.12.0 | **Licença:** MIT
 
-[![Stars](https://img.shields.io/github/stars/ascentusoss/doutor?style=social)](https://github.com/ascentusoss/doutor/stargazers)
-[![Forks](https://img.shields.io/github/forks/ascentusoss/doutor?style=social)](https://github.com/ascentusoss/doutor/network/members)
-[![Issues](https://img.shields.io/github/issues/ascentusoss/doutor)](https://github.com/ascentusoss/doutor/issues)
-[![Contributors](https://img.shields.io/github/contributors/ascentusoss/doutor)](https://github.com/ascentusoss/doutor/graphs/contributors)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/ascentusoss/doutor/blob/main/CONTRIBUTING.md)
+[![Stars](https://img.shields.io/github/stars/madiovem-555/doutor?style=social)](https://github.com/madiovem-555/doutor/stargazers)
+[![Forks](https://img.shields.io/github/forks/madiovem-555/doutor?style=social)](https://github.com/madiovem-555/doutor/network/members)
+[![Issues](https://img.shields.io/github/issues/madiovem-555/doutor)](https://github.com/madiovem-555/doutor/issues)
+[![Contributors](https://img.shields.io/github/contributors/madiovem-555/doutor)](https://github.com/madiovem-555/doutor/graphs/contributors)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/madiovem-555/doutor/blob/main/CONTRIBUTING.md)
 
 ## 🚀 Demo Rápido
 
 ```bash
 # Teste em 30 segundos sem instalar (requer Node.js 24+)
-npx github:ascentusoss/doutor diagnosticar --help
+npx github:madiovem-555/doutor diagnosticar --help
 ```
 
 ## 💡 Por que usar o Doutor?
@@ -69,7 +69,7 @@ Doutor é uma CLI modular para analisar, diagnosticar e manter projetos (JS/TS e
 
 ```bash
 # Clone o repositório
-git clone https://github.com/ascentusoss/doutor.git
+git clone https://github.com/madiovem-555/doutor.git
 cd doutor
 
 # Instale dependências e compile
@@ -83,7 +83,7 @@ node dist/bin/index.js diagnosticar --json
 **Windows (PowerShell):**
 
 ```powershell
-git clone https://github.com/ascentusoss/doutor.git; cd doutor; npm install; npm run build; node dist/bin/index.js diagnosticar --json
+git clone https://github.com/madiovem-555/doutor.git; cd doutor; npm install; npm run build; node dist/bin/index.js diagnosticar --json
 ```
 
 ### Instalação Global (Opcional)

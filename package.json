@@ -63,12 +63,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ascentusoss/doutor.git"
+    "url": "git+https://github.com/madiovem-555/doutor.git"
   },
   "bugs": {
-    "url": "https://github.com/ascentusoss/doutor/issues"
+    "url": "https://github.com/madiovem-555/doutor/issues"
   },
-  "homepage": "https://github.com/ascentusoss/doutor#readme",
+  "homepage": "https://github.com/madiovem-555/doutor#readme",
   "files": [
     "dist",
     "README.md",

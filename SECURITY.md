@@ -13,9 +13,9 @@ Se você descobrir uma vulnerabilidade de segurança no Doutor, por favor, repor
 
 ### Métodos de Relato:
 
-- **GitHub Security Advisories**: Use o [formulário de advisories do GitHub](https://github.com/ascentusoss/doutor/security/advisories/new) para relatar vulnerabilidades de forma privada.
+- **GitHub Security Advisories**: Use o [formulário de advisories do GitHub](https://github.com/madiovem-555/doutor/security/advisories/new) para relatar vulnerabilidades de forma privada.
 - **Issues Privadas**: Abra uma issue no repositório com o rótulo `security` e marque como privada, se possível. Evite incluir detalhes sensíveis no título ou descrição inicial.
-- **E-mail**: Contate o mantenedor diretamente via e-mail (consulte o perfil do GitHub de [@ossmoralus](https://github.com/ascentusoss) para obter o e-mail).
+- **E-mail**: Contate o mantenedor diretamente via e-mail (consulte o perfil do GitHub de [@ossmoralus](https://github.com/madiovem-555) para obter o e-mail).
 
 Forneça o máximo de detalhes possível, incluindo:
 
@@ -45,7 +45,7 @@ Apenas a versão mais recente e as versões ativas de manutenção recebem corre
 
 Para questões relacionadas à segurança, entre em contato:
 
-- **Mantenedor**: Italo C Lopes ([@ascentusoss](https://github.com/ascentusoss))
-- **Repositório**: [https://github.com/ascentusoss/doutor](https://github.com/ascentusoss/doutor)
+- **Mantenedor**: Italo C Lopes ([@madiovem-555](https://github.com/madiovem-555))
+- **Repositório**: [https://github.com/madiovem-555/doutor](https://github.com/madiovem-555/doutor)
 
 Obrigado por ajudar a manter o Doutor seguro!

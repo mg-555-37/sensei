@@ -36,7 +36,7 @@ git clone https://github.com/SEU-USUARIO/doutor.git
 cd doutor
 
 # Adicione o repositório upstream como remote
-git remote add upstream https://github.com/ascentusoss/doutor.git
+git remote add upstream https://github.com/madiovem-555/doutor.git
 ```
 
 ### 2. Instalação de Dependências
@@ -77,8 +77,8 @@ git checkout -b feature/sua-contribuicao-descritiva
 
 ### 🐛 Correção de Bugs
 
-- Issues com label [`bug`](https://github.com/ascentusoss/doutor/labels/bug)
-- Issues com label [`good-first-issue`](https://github.com/ascentusoss/doutor/labels/good-first-issue)
+- Issues com label [`bug`](https://github.com/madiovem-555/doutor/labels/bug)
+- Issues com label [`good-first-issue`](https://github.com/madiovem-555/doutor/labels/good-first-issue)
 - Priorize bugs críticos e regressions
 
 ### ✨ Novas Funcionalidades
