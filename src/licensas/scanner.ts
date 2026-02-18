@@ -51,7 +51,8 @@ export async function scan({ root = process.cwd(), includeDev = false } = {} as 
     }
   }
 
-  const filtered = result.packages.filter((p: unknown) => !p.name.startsWith('@types/'));
+  // Removido `: unknown` — result.packages já é tipado, inferência funciona corretamente
+  const filtered = result.packages.filter((p) => !p.name.startsWith('@types/'));
   result.totalPackages = result.packages.length;
   result.totalFiltered = filtered.length;
 
@@ -100,7 +101,8 @@ async function fsStatIsDir(p: string): Promise<boolean> {
 
 export async function scanCommand(opts: ScanOptions = {}): Promise<ScanResult> {
   const res = await scan(opts);
-  const problematic = res.packages.filter((p: unknown) => (p as unknown).license === 'UNKNOWN');
+  // Removido `: unknown` e `as unknown` — res.packages já é tipado corretamente
+  const problematic = res.packages.filter((p) => p.license === 'UNKNOWN');
   res.problematic = problematic;
   return res;
 }

@@ -30,6 +30,11 @@
     "reestruturar": "doutor reestruturar",
     "podar": "doutor podar",
     "fix-types": "doutor fix-types",
+    "scan": "doutor licencas scan",
+    "scan:root": "doutor licencas scan --root .",
+    "notices": "doutor licencas notices generate",
+    "disclaimer:add": "doutor licencas disclaimer add",
+    "disclaimer:verify": "doutor licencas disclaimer verify",
     "guardian": "doutor guardian",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint --ext .ts src",
@@ -67,12 +72,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/madiovem-555/doutor.git"
+    "url": "git+https://github.com/md-555/doutor.git"
   },
   "bugs": {
-    "url": "https://github.com/madiovem-555/doutor/issues"
+    "url": "https://github.com/md-555/doutor/issues"
   },
-  "homepage": "https://github.com/madiovem-555/doutor#readme",
+  "homepage": "https://github.com/md-555/doutor#readme",
   "files": [
     "dist",
     "README.md",
@@ -103,7 +108,7 @@
     "@typescript-eslint/parser": "^8.56.0",
     "@vitest/coverage-istanbul": "^4.0.18",
     "@vitest/coverage-v8": "^4.0.18",
-    "doutor": "file:doutor-0.3.9.tgz",
+    "doutor": "file:doutor-0.3.8.tgz",
     "eslint": "^9.39.2",
     "eslint-plugin-import": "^2.30.0",
     "eslint-plugin-simple-import-sort": "^12.1.1",

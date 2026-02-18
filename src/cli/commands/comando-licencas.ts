@@ -21,9 +21,10 @@ export function comandoLicencas(): Command {
     .option('--root <path>', 'diretório raiz (padrão: cwd)')
     .action(async (opts: { root?: string }) => {
       const root = opts.root ? path.resolve(opts.root) : process.cwd();
-      const result = licensas.scanCommand({ root }) as unknown;
+      // Corrigido: await + tipo inferido corretamente (ScanResult), sem cast para unknown
+      const result = await licensas.scanCommand({ root });
       console.log(JSON.stringify(result, null, 2));
-      process.exitCode = (result?.problematic && result.problematic.length > 0) ? 2 : 0;
+      process.exitCode = (result.problematic && result.problematic.length > 0) ? 2 : 0;
     });
 
   // subcommand: notices generate
@@ -51,7 +52,8 @@ export function comandoLicencas(): Command {
     .option('--dry-run', 'não grava alterações, apenas lista')
     .action(async (opts: { disclaimerPath?: string; root?: string; dryRun?: boolean }) => {
       const root = opts.root ? path.resolve(opts.root) : process.cwd();
-      const res = licensas.addDisclaimer({ root, disclaimerPath: opts.disclaimerPath, dryRun: Boolean(opts.dryRun) }) as unknown;
+      // Corrigido: await + tipo inferido corretamente, sem cast para unknown
+      const res = await licensas.addDisclaimer({ root, disclaimerPath: opts.disclaimerPath, dryRun: Boolean(opts.dryRun) });
       console.log('Disclaimer inserted into files:', res.updatedFiles.length);
       process.exit(0);
     });
@@ -63,7 +65,8 @@ export function comandoLicencas(): Command {
     .option('--root <path>')
     .action(async (opts: { disclaimerPath?: string; root?: string }) => {
       const root = opts.root ? path.resolve(opts.root) : process.cwd();
-      const res = licensas.verifyDisclaimer({ root, disclaimerPath: opts.disclaimerPath }) as unknown;
+      // Corrigido: await + tipo inferido corretamente, sem cast para unknown
+      const res = await licensas.verifyDisclaimer({ root, disclaimerPath: opts.disclaimerPath });
       if (res.missing.length) {
         console.error('Missing disclaimer in files:');
         for (const f of res.missing) console.error('-', f);
