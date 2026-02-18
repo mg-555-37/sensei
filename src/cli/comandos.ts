@@ -5,6 +5,7 @@ import {
   comandoDiagnosticar,
   comandoFormatar,
   comandoGuardian,
+  comandoLicencas,
   comandoMetricas,
   comandoOtimizarSvg,
   comandoPodar,
@@ -28,7 +29,7 @@ export function registrarComandos(
   program.addCommand(comandoAnalistas());
   program.addCommand(comandoMetricas());
   program.addCommand(criarComandoFixTypes());
-
+  program.addCommand(comandoLicencas());
   // Registra comando de reversão
   registrarComandoReverter(program);
 }

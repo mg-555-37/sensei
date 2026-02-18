@@ -13,6 +13,7 @@ export { comandoDiagnosticar } from './comando-diagnosticar.js';
 export { criarComandoFixTypes } from './comando-fix-types.js';
 export { comandoFormatar } from './comando-formatar.js';
 export { comandoGuardian } from './comando-guardian.js';
+export { comandoLicencas } from './comando-licencas.js';
 export { comandoMetricas } from './comando-metricas.js';
 export { comandoOtimizarSvg } from './comando-otimizar-svg.js';
 export { comandoPerf } from './comando-perf.js';

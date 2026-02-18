@@ -48,6 +48,9 @@
       "@guardian/*": [
         "./src/guardian/*"
       ],
+      "@licensas/*": [
+        "./src/licensas/*"
+      ],
       "@cli/*": [
         "./src/cli/*"
       ],
