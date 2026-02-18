@@ -2,10 +2,10 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
-import type { MemoryMessage, DoutorContextState, DoutorRunRecord } from '@';
+import type { DoutorContextState, DoutorRunRecord,MemoryMessage } from '@';
 
 // Re-exporta para compatibilidade com código existente
-export type { MemoryMessage, DoutorContextState, DoutorRunRecord };
+export type { DoutorContextState, DoutorRunRecord,MemoryMessage };
 
 export class ConversationMemory {
   private history: MemoryMessage[] = [];

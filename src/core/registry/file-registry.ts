@@ -21,10 +21,10 @@ import type { MigrationResult } from '@';
 
 import { log } from '../messages/log/log.js';
 import {
-  MIGRATION_MAP,
   DOUTOR_DIRS,
   DOUTOR_FILES,
   type DoutorFilePath,
+  MIGRATION_MAP,
 } from './paths.js';
 
 /**

@@ -23,7 +23,7 @@
 
 ---
 
-[![CI](https://github.com/madiovem-555/doutor/actions/workflows/ci.yml?badge.svg?branch=main)](https://github.com/i-lopos/doutor/actions/workflows/ci.yml)
+[![CI](https://github.com/madiovem-555/doutor/actions/workflows/ci.yml?badge.svg?branch=main)](https://github.com/madiovem-555/doutor/actions/workflows/ci.yml)
 [![Build](https://github.com/madiovem-555/doutor/actions/workflows/build.yml?badge.svg?branch=main)](https://github.com/madiovem-555/doutor/actions/workflows/build.yml)
 [![Monitor Deps](https://github.com/madiovem-555/doutor/actions/workflows/monitor-deps.yml?badge.svg)](https://github.com/madiovem-555/doutor/actions/workflows/monitor-deps.yml)
 [![Compliance](https://github.com/madiovem-555/doutor/actions/workflows/compliance.yml?badge.svg?branch=main)](https://github.com/madiovem-555/doutor/actions/workflows/compliance.yml)
@@ -31,7 +31,7 @@
 
 ## 🌟 Status do Projeto
 
-**Versão Atual:** 0.3.7 | **Node.js:** >=24.12.0 | **Licença:** MIT
+**Versão Atual:** 0.3.8 | **Node.js:** >=24.12.0 | **Licença:** MIT
 
 [![Stars](https://img.shields.io/github/stars/madiovem-555/doutor?style=social)](https://github.com/madiovem-555/doutor/stargazers)
 [![Forks](https://img.shields.io/github/forks/madiovem-555/doutor?style=social)](https://github.com/madiovem-555/doutor/network/members)

@@ -20,7 +20,7 @@ import type { CommanderError } from 'commander';
 import { Command } from 'commander';
 
 // 🌐 Flags globais aplicáveis em todos os comandos
-import type { ErrorLike, DoutorGlobalFlags } from '@';
+import type { DoutorGlobalFlags,ErrorLike } from '@';
 import { extrairMensagemErro } from '@';
 
 // caminho do módulo (usado para localizar arquivos de configuração)
