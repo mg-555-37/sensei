@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 import { promises as fs } from 'node:fs';
-import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import type { Analista, EntradaRegistry, ModuloAnalista, Tecnica } from '@';
 
@@ -33,7 +33,7 @@ function extrairEntradasDeModulo(mod: unknown): Entry[] {
 
   // Dedup interno por nome
   const byName = new Map<string, Entry>();
-  for (const e of out) byName.set(e.nome, e);
+  for (const e of out) byName.set(e.nome!, e);
   return Array.from(byName.values());
 }
 
@@ -49,7 +49,7 @@ function extrairEntradasDeModulo(mod: unknown): Entry[] {
 export async function discoverAnalistasPlugins(): Promise<EntradaRegistry[]> {
   try {
     const dirUrl = new URL('../plugins/', import.meta.url);
-    const dirFsPath = path.normalize(path.fileURLToPath(dirUrl));
+    const dirFsPath = fileURLToPath(dirUrl);
     const entries = await fs.readdir(dirFsPath, { withFileTypes: true });
 
     const arquivos = entries
@@ -84,7 +84,7 @@ export async function discoverAnalistasPlugins(): Promise<EntradaRegistry[]> {
     // Dedup final por nome
     const byName = new Map<string, EntradaRegistry>();
     for (const r of results) {
-      if (r && typeof (r as Entry).nome === 'string') byName.set((r as Entry).nome, r);
+      if (r && typeof (r as Entry).nome === 'string') byName.set((r as Entry).nome!, r);
     }
     return Array.from(byName.values());
   } catch {

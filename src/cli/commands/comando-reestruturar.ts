@@ -8,8 +8,9 @@ import { ExitCode, sair } from '@cli/helpers/exit-codes.js';
 import { parsearCategorias } from '@cli/helpers/flags-helpers.js';
 import chalk from '@core/config/chalk-safe.js';
 import { config } from '@core/config/config.js';
-import { executarInquisicao, prepararComAst, tecnicas } from '@core/execution/inquisidor.js';
+import { executarInquisicao, prepararComAst } from '@core/execution/inquisidor.js';
 import { CliComandoReestruturarMensagens } from '@core/messages/cli/cli-comando-reestruturar-messages.js';
+import { registroAnalistas as tecnicas } from '@analistas/registry/registry.js';
 import { CABECALHOS, log } from '@core/messages/index.js';
 import { Command } from 'commander';
 import ora from 'ora';
@@ -135,28 +136,29 @@ export function comandoReestruturar(aplicarFlagsGlobais: (opts: Record<string, u
         // Se iniciarInquisicao existir, use para alinhar com mocks dos testes
         let analise;
         try {
-          const {
-            iniciarInquisicao
-          } = await import('@core/execution/inquisidor.js');
-          if (typeof iniciarInquisicao === 'function') {
-            analise = await iniciarInquisicao(baseDir, {
-              skipExec: false
-            });
-            // Se retornar fileEntries, use executarInquisicao normalmente
-            if (analise && analise.fileEntries) {
-              analiseParaCorrecao = await executarInquisicao(fileEntriesComAst, tecnicas, baseDir, undefined, {
-                verbose: false,
-                compact: true
-              });
-            } else {
-              analiseParaCorrecao = analise as ResultadoInquisicao;
-            }
-          } else {
-            analiseParaCorrecao = await executarInquisicao(fileEntriesComAst, tecnicas, baseDir, undefined, {
-              verbose: false,
-              compact: true
-            });
-          }
+          const { iniciarInquisicao } = await import('@core/execution/inquisidor.js');
+if (typeof iniciarInquisicao === 'function') {
+  analise = await iniciarInquisicao(baseDir, { skipExec: false });
+
+  if (analise && analise.fileEntries) {
+    // Se o resultado tiver fileEntries, é um ResultadoInquisicao completo
+    analiseParaCorrecao = analise as ResultadoInquisicao;
+  } else if (analise && 'ocorrencias' in analise) {
+    // Se tiver apenas ocorrencias, é um resultado parcial (possivelmente de mock) - converte para formato completo
+    analiseParaCorrecao = await executarInquisicao(fileEntriesComAst, tecnicas, baseDir, undefined, {
+      verbose: false,
+      compact: true
+    });
+  } else {
+    analiseParaCorrecao = analise as ResultadoInquisicao;
+  }
+} else {
+  // Se iniciarInquisicao não existir, executa inquisicao diretamente (fallback para testes sem mock)
+  analiseParaCorrecao = await executarInquisicao(fileEntriesComAst, tecnicas, baseDir, undefined, {
+    verbose: false,
+    compact: true
+  });
+}
         } catch (err) {
           // Em testes, se o mock falhar, continue com dados vazios
           if (process.env.VITEST) {
