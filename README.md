@@ -11,11 +11,11 @@
 
 **Versão Atual:** 0.3.9 | **Node.js:** >=24.12.0 | **Licença:** MIT
 
-[![Stars](https://img.shields.io/github/stars/md-555/sensei?style=social)](https://github.com/md-555/sensei/stargazers)
-[![Forks](https://img.shields.io/github/forks/md-555/sensei?style=social)](https://github.com/md-555/sensei/network/members)
-[![Issues](https://img.shields.io/github/issues/md-555/sensei)](https://github.com/md-555/sensei/issues)
-[![Contributors](https://img.shields.io/github/contributors/md-555/sensei)](https://github.com/md-555/sensei/graphs/contributors)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/md-555/sensei/blob/main/CONTRIBUTING.md)
+[![Stars](https://img.shields.io/github/stars/md-555-37/sensei?style=social)](https://github.com/md-555-37/sensei/stargazers)
+[![Forks](https://img.shields.io/github/forks/md-555-37/sensei?style=social)](https://github.com/md-555-37/sensei/network/members)
+[![Issues](https://img.shields.io/github/issues/md-555-37/sensei)](https://github.com/md-555-37/sensei/issues)
+[![Contributors](https://img.shields.io/github/contributors/md-555-37/sensei)](https://github.com/md-555-37/sensei/graphs/contributors)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/md-555-37/sensei/blob/main/CONTRIBUTING.md)
 
 ## 🚀 Demo Rápido
 
