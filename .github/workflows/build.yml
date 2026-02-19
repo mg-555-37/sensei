@@ -44,7 +44,7 @@ jobs:
           test -f dist/bin/index.js && echo "✅ CLI entry point exists" || exit 1
 
       - name: Upload Build Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: dist
           path: dist/
