@@ -10,13 +10,12 @@ export interface ContextoProjeto {
   isWebApp: boolean;
   isLibrary: boolean;
   isTest: boolean;
-  isConfig: boolean;
+  isConfiguracao: boolean;
   isInfrastructure: boolean;
   frameworks: string[];
   linguagens: string[];
   arquetipo?: string;
 }
-
 export interface DetectarContextoOpcoes {
   arquivo: string;
   conteudo: string;

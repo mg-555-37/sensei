@@ -14,26 +14,14 @@
 
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-
 import { log } from '@core/messages/index.js';
-import {
-  ERROS_IMPORTS,
-  gerarResumoImports,
-  MENSAGENS_IMPORTS,
-  PROGRESSO_IMPORTS,
-} from '@core/messages/zeladores/zelador-messages.js';
-
-import type {
-  AliasConfig,
-  ImportCorrecao,
-  ImportCorrecaoArquivo,
-  ImportCorrecaoOptions,
-} from '@';
+import { ERROS_IMPORTS, gerarResumoImports, MENSAGENS_IMPORTS, PROGRESSO_IMPORTS } from '@core/messages/zeladores/zelador-messages.js';
+import type { AliasConfig, ImportCorrecao, ImportCorrecaoArquivo, ImportCorrecaoOptions } from '@';
 
 /**
  * Configuração padrão de aliases baseada em tsconfig.json
  */
-const DEFAULT_ALIAS_CONFIG: AliasConfig = {
+const PADRAO_ALIAS_CONFIGURACAO: AliasConfig = {
   '@core': './core',
   '@analistas': './analistas',
   '@types': './types',
@@ -41,18 +29,17 @@ const DEFAULT_ALIAS_CONFIG: AliasConfig = {
   '@cli': './cli',
   '@guardian': './guardian',
   '@relatorios': './relatorios',
-  '@zeladores': './zeladores',
+  '@zeladores': './zeladores'
 };
 
 /**
  * Padrões de imports que devem ser corrigidos
  */
-const PATTERNS = {
+const PADROES = {
   // @types/types.js → @types/types
   tiposComExtensao: /@types\/types\.js\b/g,
-
   // Imports relativos que podem ser convertidos em aliases
-  importRelativo: /from\s+(['"])(\.\.[\/\\].+?)\1/g,
+  importRelativo: /from\s+(['"])(\.\.[\/\\].+?)\1/g
 };
 
 /**
@@ -60,21 +47,21 @@ const PATTERNS = {
  */
 async function* walkDirectory(dir: string): AsyncGenerator<string> {
   try {
-    const entries = await fs.readdir(dir, { withFileTypes: true });
-
+    const entries = await fs.readdir(dir, {
+      withFileTypes: true
+    });
     for (const entry of entries) {
-      const fullPath = path.join(dir, entry.name);
-
+      const fullCaminho = path.join(dir, entry.name);
       if (entry.isDirectory()) {
         // Pular node_modules, dist, coverage, etc
         if (['node_modules', 'dist', 'coverage', '.git'].includes(entry.name)) {
           continue;
         }
-        yield* walkDirectory(fullPath);
+        yield* walkDirectory(fullCaminho);
       } else if (entry.isFile()) {
         // Apenas arquivos TS/JS/JSX/TSX
         if (/\.(ts|tsx|js|jsx|mjs|cjs)$/.test(entry.name)) {
-          yield fullPath;
+          yield fullCaminho;
         }
       }
     }
@@ -94,106 +81,99 @@ function corrigirImportsTipos(conteudo: string): {
   let conteudoAtualizado = conteudo;
 
   // Corrigir @types/types.js → @types/types
-  conteudoAtualizado = conteudoAtualizado.replace(
-    PATTERNS.tiposComExtensao,
-    (match, offset) => {
-      correcoes.push({
-        tipo: 'tipos-extensao',
-        de: match,
-        para: '@types/types',
-        linha: conteudo.substring(0, offset).split('\n').length,
-      });
-      return '@types/types';
-    },
-  );
+  conteudoAtualizado = conteudoAtualizado.replace(PADROES.tiposComExtensao, (match, offset) => {
+    correcoes.push({
+      tipo: 'tipos-extensao',
+      de: match,
+      para: '@types/types',
+      linha: conteudo.substring(0, offset).split('\n').length
+    });
+    return '@types/types';
+  });
 
   // Corrigir @types/<subpath> → @types/types
   // Importante: não deve "corrigir" o que já está em @types/types (evita duplicar correções).
   const regex = /(['"])@types\/([^'"\n]+?)\1/g;
-  conteudoAtualizado = conteudoAtualizado.replace(
-    regex,
-    (match, quote: string, subpath: string, offset: number) => {
-      const normalized = String(subpath || '').trim();
+  conteudoAtualizado = conteudoAtualizado.replace(regex, (match, quote: string, subpath: string, offset: number) => {
+    const normalized = String(subpath || '').trim();
 
-      // Já correto: não gera correção nem altera texto.
-      if (normalized === 'types') return match;
+    // Já correto: não gera correção nem altera texto.
+    if (normalized === 'types') return match;
 
-      // Caso ainda chegue aqui como types.js (por algum input estranho), não duplicar: trata como extensão.
-      if (normalized === 'types.js') {
-        const novoImport = `${quote}@types/types${quote}`;
-        correcoes.push({
-          tipo: 'tipos-extensao',
-          de: match,
-          para: novoImport,
-          linha: conteudo.substring(0, offset).split('\n').length,
-        });
-        return novoImport;
-      }
-
+    // Caso ainda chegue aqui como types.js (por algum input estranho), não duplicar: trata como extensão.
+    if (normalized === 'types.js') {
       const novoImport = `${quote}@types/types${quote}`;
       correcoes.push({
-        tipo: 'tipos-subpath',
+        tipo: 'tipos-extensao',
         de: match,
         para: novoImport,
-        linha: conteudo.substring(0, offset).split('\n').length,
+        linha: conteudo.substring(0, offset).split('\n').length
       });
       return novoImport;
-    },
-  );
-
-  return { conteudo: conteudoAtualizado, correcoes };
+    }
+    const novoImport = `${quote}@types/types${quote}`;
+    correcoes.push({
+      tipo: 'tipos-subpath',
+      de: match,
+      para: novoImport,
+      linha: conteudo.substring(0, offset).split('\n').length
+    });
+    return novoImport;
+  });
+  return {
+    conteudo: conteudoAtualizado,
+    correcoes
+  };
 }
 
 /**
  * Detecta e corrige imports relativos que podem ser convertidos em aliases
  */
-function corrigirImportsRelativos(
-  conteudo: string,
-  _filePath: string,
-  _projectRoot: string,
-  _aliasConfig: AliasConfig,
-): { conteudo: string; correcoes: ImportCorrecao[] } {
+function corrigirImportsRelativos(conteudo: string, _filePath: string, _projectRoot: string, _aliasConfig: AliasConfig): {
+  conteudo: string;
+  correcoes: ImportCorrecao[];
+} {
   const correcoes: ImportCorrecao[] = [];
   const conteudoAtualizado = conteudo;
 
   // Implementação simplificada - não tenta converter relativos para aliases
   // pois requer análise de paths complexa. Foco apenas em @types por enquanto.
 
-  return { conteudo: conteudoAtualizado, correcoes };
+  return {
+    conteudo: conteudoAtualizado,
+    correcoes
+  };
 }
 
 /**
  * Processa um único arquivo corrigindo todos os imports
  */
-async function processarArquivo(
-  filePath: string,
-  options: ImportCorrecaoOptions,
-): Promise<ImportCorrecaoArquivo> {
+async function processarArquivo(fileCaminho: string, options: ImportCorrecaoOptions): Promise<ImportCorrecaoArquivo> {
   const resultado: ImportCorrecaoArquivo = {
-    arquivo: path.relative(options.projectRoot, filePath),
+    arquivo: path.relative(options.projectRaiz, fileCaminho),
     correcoes: [],
-    modificado: false,
+    modificado: false
   };
-
   try {
-    const conteudoOriginal = await fs.readFile(filePath, 'utf-8');
+    const conteudoOriginal = await fs.readFile(fileCaminho, 'utf-8');
     let conteudoAtualizado = conteudoOriginal;
 
     // Aplicar correções de @types
     if (options.corrigirTipos !== false) {
-      const { conteudo, correcoes } = corrigirImportsTipos(conteudoAtualizado);
+      const {
+        conteudo,
+        correcoes
+      } = corrigirImportsTipos(conteudoAtualizado);
       conteudoAtualizado = conteudo;
       resultado.correcoes.push(...correcoes);
     }
 
     // Aplicar correções de imports relativos
     if (options.corrigirRelativos !== false) {
-      const { conteudo, correcoes } = corrigirImportsRelativos(
-        conteudoAtualizado,
-        filePath,
-        options.projectRoot,
-        options.aliasConfig || DEFAULT_ALIAS_CONFIG,
-      );
+      const {
+        conteudo,
+        correcoes
+      } = corrigirImportsRelativos(conteudoAtualizado, fileCaminho, options.projectRaiz, options.aliasConfig || PADRAO_ALIAS_CONFIGURACAO);
       conteudoAtualizado = conteudo;
       resultado.correcoes.push(...correcoes);
     }
@@ -201,119 +181,82 @@ async function processarArquivo(
     // Escrever arquivo se houver mudanças
     if (conteudoAtualizado !== conteudoOriginal) {
       if (!options.dryRun) {
-        await fs.writeFile(filePath, conteudoAtualizado, 'utf-8');
+        await fs.writeFile(fileCaminho, conteudoAtualizado, 'utf-8');
       }
       resultado.modificado = true;
     }
   } catch (error) {
     resultado.erro = error instanceof Error ? error.message : String(error);
   }
-
   return resultado;
 }
 
 /**
  * Executa o zelador de imports em um diretório
  */
-export async function executarZeladorImports(
-  targetDirs: string[],
-  options: Partial<ImportCorrecaoOptions> = {},
-): Promise<ImportCorrecaoArquivo[]> {
-  const projectRoot = options.projectRoot || process.cwd();
-  const fullOptions: ImportCorrecaoOptions = {
-    projectRoot,
+export async function executarZeladorImports(targetDirs: string[], options: Partial<ImportCorrecaoOptions> = {}): Promise<ImportCorrecaoArquivo[]> {
+  const projectRaiz = options.projectRaiz || process.cwd();
+  const fullOpcoes: ImportCorrecaoOptions = {
+    projectRaiz,
     dryRun: options.dryRun ?? false,
     verbose: options.verbose ?? false,
     corrigirTipos: options.corrigirTipos ?? true,
-    corrigirRelativos: options.corrigirRelativos ?? false, // Desabilitado por padrão
-    aliasConfig: options.aliasConfig || DEFAULT_ALIAS_CONFIG,
+    corrigirRelativos: options.corrigirRelativos ?? false,
+    // Desabilitado por padrão
+    aliasConfig: options.aliasConfig || PADRAO_ALIAS_CONFIGURACAO
   };
-
   const resultados: ImportCorrecaoArquivo[] = [];
-
   for (const dir of targetDirs) {
-    const fullPath = path.resolve(projectRoot, dir);
-
+    const fullCaminho = path.resolve(projectRaiz, dir);
     try {
-      await fs.access(fullPath);
+      await fs.access(fullCaminho);
     } catch {
-      if (fullOptions.verbose) {
+      if (fullOpcoes.verbose) {
         log.aviso(PROGRESSO_IMPORTS.diretorioNaoEncontrado(dir));
       }
       continue;
     }
-
-    for await (const filePath of walkDirectory(fullPath)) {
-      const resultado = await processarArquivo(filePath, fullOptions);
-
+    for await (const fileCaminho of walkDirectory(fullCaminho)) {
+      const resultado = await processarArquivo(fileCaminho, fullOpcoes);
       if (resultado.modificado || resultado.erro) {
         resultados.push(resultado);
-
-        if (fullOptions.verbose) {
+        if (fullOpcoes.verbose) {
           if (resultado.modificado) {
-            log.sucesso(
-              PROGRESSO_IMPORTS.arquivoProcessado(
-                resultado.arquivo,
-                resultado.correcoes.length,
-              ),
-            );
+            log.sucesso(PROGRESSO_IMPORTS.arquivoProcessado(resultado.arquivo, resultado.correcoes.length));
           }
           if (resultado.erro) {
-            log.erro(
-              PROGRESSO_IMPORTS.arquivoErro(resultado.arquivo, resultado.erro),
-            );
+            log.erro(PROGRESSO_IMPORTS.arquivoErro(resultado.arquivo, resultado.erro));
           }
         }
       }
     }
   }
-
   return resultados;
 }
 
 /**
  * Gera relatório de correções aplicadas
  */
-export function gerarRelatorioCorrecoes(
-  resultados: ImportCorrecaoArquivo[],
-): string {
-  const modificados = resultados.filter((r) => r.modificado);
-  const comErro = resultados.filter((r) => r.erro);
-  const totalCorrecoes = modificados.reduce(
-    (sum, r) => sum + r.correcoes.length,
-    0,
-  );
-
-  const linhas: string[] = [
-    '# Relatório de Correções de Imports\n',
-    `Arquivos processados: ${resultados.length}`,
-    `Arquivos modificados: ${modificados.length}`,
-    `Total de correções: ${totalCorrecoes}`,
-    `Erros: ${comErro.length}\n`,
-  ];
-
+export function gerarRelatorioCorrecoes(resultados: ImportCorrecaoArquivo[]): string {
+  const modificados = resultados.filter(r => r.modificado);
+  const comErro = resultados.filter(r => r.erro);
+  const totalCorrecoes = modificados.reduce((sum, r) => sum + r.correcoes.length, 0);
+  const linhas: string[] = ['# Relatório de Correções de Imports\n', `Arquivos processados: ${resultados.length}`, `Arquivos modificados: ${modificados.length}`, `Total de correções: ${totalCorrecoes}`, `Erros: ${comErro.length}\n`];
   if (modificados.length > 0) {
     linhas.push('## Arquivos Modificados\n');
-
     for (const resultado of modificados) {
       linhas.push(`### ${resultado.arquivo}`);
       linhas.push(`**Correções:** ${resultado.correcoes.length}\n`);
-
-      const porTipo = resultado.correcoes.reduce(
-        (acc: Record<string, number>, c: ImportCorrecao) => {
-          acc[c.tipo] = (acc[c.tipo] || 0) + 1;
-          return acc;
-        },
-        {} as Record<string, number>,
-      );
-
+      const porTipo = resultado.correcoes.reduce((acc: Record<string, number>, c: ImportCorrecao) => {
+        acc[c.tipo] = (acc[c.tipo] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
       for (const [tipo, count] of Object.entries(porTipo)) {
         linhas.push(`- ${tipo}: ${count}`);
       }
       linhas.push('');
     }
   }
-
   if (comErro.length > 0) {
     linhas.push('## Erros\n');
     for (const resultado of comErro) {
@@ -321,40 +264,30 @@ export function gerarRelatorioCorrecoes(
     }
     linhas.push('');
   }
-
   return linhas.join('\n');
 }
 
 /**
  * Função principal para uso via CLI ou programático
  */
-export async function corrigirImports(
-  dirs: string[] = ['src', 'tests'],
-  options: Partial<ImportCorrecaoOptions> = {},
-): Promise<void> {
+export async function corrigirImports(dirs: string[] = ['src', 'tests'], options: Partial<ImportCorrecaoOptions> = {}): Promise<void> {
   log.fase?.(MENSAGENS_IMPORTS.titulo);
   console.log(); // linha vazia para espaçamento
 
   const resultados = await executarZeladorImports(dirs, {
     ...options,
-    verbose: true,
+    verbose: true
   });
-
-  const modificados = resultados.filter((r) => r.modificado);
-  const totalCorrecoes = modificados.reduce(
-    (sum, r) => sum + r.correcoes.length,
-    0,
-  );
-  const comErro = resultados.filter((r) => r.erro);
-
+  const modificados = resultados.filter(r => r.modificado);
+  const totalCorrecoes = modificados.reduce((sum, r) => sum + r.correcoes.length, 0);
+  const comErro = resultados.filter(r => r.erro);
   const resumo = gerarResumoImports({
     processados: resultados.length,
     modificados: modificados.length,
     totalCorrecoes,
     erros: comErro.length,
-    dryRun: options.dryRun ?? false,
+    dryRun: options.dryRun ?? false
   });
-
   for (const linha of resumo) {
     if (linha === '') {
       console.log();

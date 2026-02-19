@@ -6,16 +6,10 @@
 
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-
 import { config } from '@core/config/config.js';
-import { CliExportersMessages } from '@core/messages/cli/cli-exporters-messages.js';
+import { CliExportersMensagens } from '@core/messages/cli/cli-exporters-messages.js';
 import { log } from '@core/messages/index.js';
-
-import type {
-  CasoTipoInseguro,
-  FixTypesExportOptions,
-  FixTypesExportResult,
-} from '@';
+import type { CasoTipoInseguro, FixTypesExportOptions, FixTypesExportResult } from '@';
 
 // Re-export para compatibilidade
 export type { CasoTipoInseguro, FixTypesExportOptions, FixTypesExportResult };
@@ -23,16 +17,15 @@ export type { CasoTipoInseguro, FixTypesExportOptions, FixTypesExportResult };
 /**
  * Gera relatório JSON estruturado
  */
-async function gerarRelatorioJson(
-  caminho: string,
-  options: FixTypesExportOptions,
-): Promise<void> {
-  const { casos, stats, minConfidence, verbose } = options;
-
+async function gerarRelatorioJson(caminho: string, options: FixTypesExportOptions): Promise<void> {
+  const {
+    casos,
+    stats,
+    minConfidence,
+    verbose
+  } = options;
   const total = stats.legitimo + stats.melhoravel + stats.corrigir;
-  const mediaConfianca =
-    total > 0 ? Math.round(stats.totalConfianca / total) : 0;
-
+  const mediaConfianca = total > 0 ? Math.round(stats.totalConfianca / total) : 0;
   const relatorio = {
     metadata: {
       timestamp: new Date().toISOString(),
@@ -40,8 +33,8 @@ async function gerarRelatorioJson(
       schemaVersion: '1.0.0',
       configuracao: {
         confianciaMinima: minConfidence,
-        modoVerbose: verbose,
-      },
+        modoVerbose: verbose
+      }
     },
     resumo: {
       totalCasos: total,
@@ -49,22 +42,19 @@ async function gerarRelatorioJson(
       distribuicao: {
         legitimo: {
           total: stats.legitimo,
-          percentual:
-            total > 0 ? Math.round((stats.legitimo / total) * 100) : 0,
+          percentual: total > 0 ? Math.round(stats.legitimo / total * 100) : 0
         },
         melhoravel: {
           total: stats.melhoravel,
-          percentual:
-            total > 0 ? Math.round((stats.melhoravel / total) * 100) : 0,
+          percentual: total > 0 ? Math.round(stats.melhoravel / total * 100) : 0
         },
         corrigir: {
           total: stats.corrigir,
-          percentual:
-            total > 0 ? Math.round((stats.corrigir / total) * 100) : 0,
-        },
-      },
+          percentual: total > 0 ? Math.round(stats.corrigir / total * 100) : 0
+        }
+      }
     },
-    casos: casos.map((c) => ({
+    casos: casos.map(c => ({
       arquivo: c.arquivo,
       linha: c.linha,
       tipo: c.tipo,
@@ -73,50 +63,41 @@ async function gerarRelatorioJson(
       motivo: c.motivo,
       sugestao: c.sugestao,
       variantes: c.variantes || [],
-      contexto: c.contexto,
+      contexto: c.contexto
     })),
     // Agrupamentos úteis para análise
     analise: {
       porArquivo: agruparPorArquivo(casos),
       porCategoria: agruparPorCategoria(casos),
-      altaPrioridade: casos
-        .filter((c) => c.categoria === 'corrigir' && c.confianca >= 85)
-        .map((c) => ({
-          arquivo: c.arquivo,
-          linha: c.linha,
-          confianca: c.confianca,
-          sugestao: c.sugestao || c.motivo,
-        })),
-      casosIncertos: casos
-        .filter(
-          (c) => c.confianca < 70 && c.variantes && c.variantes.length > 0,
-        )
-        .map((c) => ({
-          arquivo: c.arquivo,
-          linha: c.linha,
-          confianca: c.confianca,
-          motivo: c.motivo,
-          variantes: c.variantes,
-        })),
-    },
+      altaPrioridade: casos.filter(c => c.categoria === 'corrigir' && c.confianca >= 85).map(c => ({
+        arquivo: c.arquivo,
+        linha: c.linha,
+        confianca: c.confianca,
+        sugestao: c.sugestao || c.motivo
+      })),
+      casosIncertos: casos.filter(c => c.confianca < 70 && c.variantes && c.variantes.length > 0).map(c => ({
+        arquivo: c.arquivo,
+        linha: c.linha,
+        confianca: c.confianca,
+        motivo: c.motivo,
+        variantes: c.variantes
+      }))
+    }
   };
-
   await fs.writeFile(caminho, JSON.stringify(relatorio, null, 2));
 }
 
 /**
  * Gera relatório Markdown legível
  */
-async function gerarRelatorioMarkdown(
-  caminho: string,
-  options: FixTypesExportOptions,
-): Promise<void> {
-  const { casos, stats, minConfidence } = options;
-
+async function gerarRelatorioMarkdown(caminho: string, options: FixTypesExportOptions): Promise<void> {
+  const {
+    casos,
+    stats,
+    minConfidence
+  } = options;
   const total = stats.legitimo + stats.melhoravel + stats.corrigir;
-  const mediaConfianca =
-    total > 0 ? Math.round(stats.totalConfianca / total) : 0;
-
+  const mediaConfianca = total > 0 ? Math.round(stats.totalConfianca / total) : 0;
   const lines: string[] = [];
 
   // Cabeçalho
@@ -133,33 +114,22 @@ async function gerarRelatorioMarkdown(
   lines.push(`- **Total de Casos:** ${total}`);
   lines.push(`- **Confiança Média:** ${mediaConfianca}%`);
   lines.push('');
-
   lines.push('### Distribuição por Categoria');
   lines.push('');
   lines.push('| Categoria | Total | Percentual | Descrição |');
   lines.push('|-----------|-------|------------|-----------|');
-  lines.push(
-    `| [SUCESSO] LEGÍTIMO | ${stats.legitimo} | ${total > 0 ? Math.round((stats.legitimo / total) * 100) : 0}% | Uso correto - nenhuma ação necessária |`,
-  );
-  lines.push(
-    `| [AVISO] MELHORÁVEL | ${stats.melhoravel} | ${total > 0 ? Math.round((stats.melhoravel / total) * 100) : 0}% | Pode ser mais específico - revisão manual recomendada |`,
-  );
-  lines.push(
-    `| [ERRO] CORRIGIR | ${stats.corrigir} | ${total > 0 ? Math.round((stats.corrigir / total) * 100) : 0}% | Deve ser substituído - correção necessária |`,
-  );
+  lines.push(`| [SUCESSO] LEGÍTIMO | ${stats.legitimo} | ${total > 0 ? Math.round(stats.legitimo / total * 100) : 0}% | Uso correto - nenhuma ação necessária |`);
+  lines.push(`| [AVISO] MELHORÁVEL | ${stats.melhoravel} | ${total > 0 ? Math.round(stats.melhoravel / total * 100) : 0}% | Pode ser mais específico - revisão manual recomendada |`);
+  lines.push(`| [ERRO] CORRIGIR | ${stats.corrigir} | ${total > 0 ? Math.round(stats.corrigir / total * 100) : 0}% | Deve ser substituído - correção necessária |`);
   lines.push('');
 
   // Casos de Alta Prioridade
-  const altaPrioridade = casos.filter(
-    (c) => c.categoria === 'corrigir' && c.confianca >= 85,
-  );
+  const altaPrioridade = casos.filter(c => c.categoria === 'corrigir' && c.confianca >= 85);
   if (altaPrioridade.length > 0) {
     lines.push('## [ERRO] Correções de Alta Prioridade (≥85% confiança)');
     lines.push('');
     altaPrioridade.forEach((caso, idx) => {
-      lines.push(
-        `### ${idx + 1}. ${caso.arquivo}:${caso.linha || '?'} (${caso.confianca}%)`,
-      );
+      lines.push(`### ${idx + 1}. ${caso.arquivo}:${caso.linha || '?'} (${caso.confianca}%)`);
       lines.push('');
       lines.push(`**Motivo:** ${caso.motivo}`);
       if (caso.sugestao) {
@@ -176,21 +146,14 @@ async function gerarRelatorioMarkdown(
   }
 
   // Casos Incertos
-  const casosIncertos = casos.filter(
-    (c) => c.confianca < 70 && c.variantes && c.variantes.length > 0,
-  );
+  const casosIncertos = casos.filter(c => c.confianca < 70 && c.variantes && c.variantes.length > 0);
   if (casosIncertos.length > 0) {
     lines.push('## [AVISO] Casos com Análise Incerta (<70% confiança)');
     lines.push('');
-    lines.push(
-      '*Estes casos requerem revisão manual cuidadosa - múltiplas possibilidades detectadas*',
-    );
+    lines.push('*Estes casos requerem revisão manual cuidadosa - múltiplas possibilidades detectadas*');
     lines.push('');
-
     casosIncertos.forEach((caso, idx) => {
-      lines.push(
-        `### ${idx + 1}. ${caso.arquivo}:${caso.linha || '?'} (${caso.confianca}%)`,
-      );
+      lines.push(`### ${idx + 1}. ${caso.arquivo}:${caso.linha || '?'} (${caso.confianca}%)`);
       lines.push('');
       lines.push(`**Motivo:** ${caso.motivo}`);
       if (caso.sugestao) {
@@ -216,26 +179,15 @@ async function gerarRelatorioMarkdown(
   // Lista Completa por Categoria
   lines.push('## [INFO] Lista Completa de Casos');
   lines.push('');
-
   for (const categoria of ['legitimo', 'melhoravel', 'corrigir'] as const) {
-    const casosPorCategoria = casos.filter((c) => c.categoria === categoria);
+    const casosPorCategoria = casos.filter(c => c.categoria === categoria);
     if (casosPorCategoria.length === 0) continue;
-
-    const prefixo =
-      categoria === 'legitimo'
-        ? '[SUCESSO]'
-        : categoria === 'melhoravel'
-          ? '[AVISO]'
-          : '[ERRO]';
+    const prefixo = categoria === 'legitimo' ? '[SUCESSO]' : categoria === 'melhoravel' ? '[AVISO]' : '[ERRO]';
     const titulo = categoria.toUpperCase();
-
     lines.push(`### ${prefixo} ${titulo} (${casosPorCategoria.length} casos)`);
     lines.push('');
-
-    casosPorCategoria.forEach((caso) => {
-      lines.push(
-        `- **${caso.arquivo}:${caso.linha || '?'}** (${caso.confianca}%)`,
-      );
+    casosPorCategoria.forEach(caso => {
+      lines.push(`- **${caso.arquivo}:${caso.linha || '?'}** (${caso.confianca}%)`);
       lines.push(`  - ${caso.motivo}`);
       if (caso.sugestao) {
         lines.push(`  - [INFO] ${caso.sugestao}`);
@@ -243,7 +195,6 @@ async function gerarRelatorioMarkdown(
     });
     lines.push('');
   }
-
   await fs.writeFile(caminho, lines.join('\n'));
 }
 
@@ -251,29 +202,30 @@ async function gerarRelatorioMarkdown(
  * Agrupa casos por arquivo
  */
 function agruparPorArquivo(casos: CasoTipoInseguro[]): Record<string, number> {
-  return casos.reduce(
-    (acc, caso) => {
-      acc[caso.arquivo] = (acc[caso.arquivo] || 0) + 1;
-      return acc;
-    },
-    {} as Record<string, number>,
-  );
+  return casos.reduce((acc, caso) => {
+    acc[caso.arquivo] = (acc[caso.arquivo] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
 }
 
 /**
  * Agrupa casos por categoria
  */
-function agruparPorCategoria(
-  casos: CasoTipoInseguro[],
-): Record<string, Array<{ arquivo: string; linha?: number }>> {
-  return casos.reduce(
-    (acc, caso) => {
-      if (!acc[caso.categoria]) acc[caso.categoria] = [];
-      acc[caso.categoria].push({ arquivo: caso.arquivo, linha: caso.linha });
-      return acc;
-    },
-    {} as Record<string, Array<{ arquivo: string; linha?: number }>>,
-  );
+function agruparPorCategoria(casos: CasoTipoInseguro[]): Record<string, Array<{
+  arquivo: string;
+  linha?: number;
+}>> {
+  return casos.reduce((acc, caso) => {
+    if (!acc[caso.categoria]) acc[caso.categoria] = [];
+    acc[caso.categoria].push({
+      arquivo: caso.arquivo,
+      linha: caso.linha
+    });
+    return acc;
+  }, {} as Record<string, Array<{
+    arquivo: string;
+    linha?: number;
+  }>>);
 }
 
 /**
@@ -282,24 +234,22 @@ function agruparPorCategoria(
  * @param options - Opções de exportação
  * @returns Caminhos dos arquivos gerados ou null em caso de erro
  */
-export async function exportarRelatoriosFixTypes(
-  options: FixTypesExportOptions,
-): Promise<FixTypesExportResult | null> {
+export async function exportarRelatoriosFixTypes(options: FixTypesExportOptions): Promise<FixTypesExportResult | null> {
   if (!config.REPORT_EXPORT_ENABLED) {
     return null;
   }
-
   try {
-    const { baseDir } = options;
+    const {
+      baseDir
+    } = options;
 
     // Determinar diretório de saída
-    const dir =
-      typeof config.REPORT_OUTPUT_DIR === 'string'
-        ? config.REPORT_OUTPUT_DIR
-        : path.join(baseDir, 'relatorios');
+    const dir = typeof config.REPORT_OUTPUT_DIR === 'string' ? config.REPORT_OUTPUT_DIR : path.join(baseDir, 'relatorios');
 
     // Criar diretório se não existir
-    await fs.mkdir(dir, { recursive: true });
+    await fs.mkdir(dir, {
+      recursive: true
+    });
 
     // Gerar timestamp único para os arquivos
     const ts = new Date().toISOString().replace(/[:.]/g, '-');
@@ -314,19 +264,16 @@ export async function exportarRelatoriosFixTypes(
     await gerarRelatorioJson(caminhoJson, options);
 
     // Log de sucesso
-    log.sucesso(CliExportersMessages.fixTypes.relatoriosExportadosTitulo);
-    log.info(CliExportersMessages.fixTypes.caminhoMarkdown(caminhoMd));
-    log.info(CliExportersMessages.fixTypes.caminhoJson(caminhoJson));
-
+    log.sucesso(CliExportersMensagens.fixTypes.relatoriosExportadosTitulo);
+    log.info(CliExportersMensagens.fixTypes.caminhoMarkdown(caminhoMd));
+    log.info(CliExportersMensagens.fixTypes.caminhoJson(caminhoJson));
     return {
       markdown: caminhoMd,
       json: caminhoJson,
-      dir,
+      dir
     };
   } catch (error) {
-    log.erro(
-      CliExportersMessages.fixTypes.falhaExportar((error as Error).message),
-    );
+    log.erro(CliExportersMensagens.fixTypes.falhaExportar((error as Error).message));
     return null;
   }
 }

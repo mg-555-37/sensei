@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
 import path from 'node:path';
-
 import { exists, findLicenseFile, readPackageJsonSync } from './fs-utils.js';
 import type { ScanOptions, ScanResult } from './licensas.js';
 import { normalizeLicense } from './normalizer.js';
-
-export async function scan({ root = process.cwd(), includeDev = false } = {} as ScanOptions): Promise<ScanResult> {
+export async function scan({
+  root = process.cwd(),
+  includeDev = false
+} = {} as ScanOptions): Promise<ScanResult> {
   const nmDir = path.join(root, 'node_modules');
   const result: ScanResult = {
     generatedAt: new Date().toISOString(),
@@ -13,13 +14,11 @@ export async function scan({ root = process.cwd(), includeDev = false } = {} as 
     totalFiltered: 0,
     licenseCounts: {},
     packages: [],
-    problematic: [],
+    problematic: []
   };
-
   if (!exists(nmDir)) {
     return result;
   }
-
   const entries: string[] = [];
   try {
     const dirEntries = await fsReaddir(nmDir);
@@ -27,11 +26,10 @@ export async function scan({ root = process.cwd(), includeDev = false } = {} as 
   } catch (err) {
     return result;
   }
-
-  for (const entryName of entries) {
-    if (entryName === '.bin') continue;
-    const full = path.join(nmDir, entryName);
-    if (entryName.startsWith('@')) {
+  for (const entryNome of entries) {
+    if (entryNome === '.bin') continue;
+    const full = path.join(nmDir, entryNome);
+    if (entryNome.startsWith('@')) {
       try {
         const scoped = await fsReaddir(full);
         for (const s of scoped) {
@@ -47,43 +45,39 @@ export async function scan({ root = process.cwd(), includeDev = false } = {} as 
   }
 
   // Removido `: unknown` — result.packages já é tipado, inferência funciona corretamente
-  const filtered = result.packages.filter((p) => !p.name.startsWith('@types/'));
+  const filtered = result.packages.filter(p => !p.name.startsWith('@types/'));
   result.totalPackages = result.packages.length;
   result.totalFiltered = filtered.length;
-
   for (const p of filtered) result.licenseCounts[p.license] = (result.licenseCounts[p.license] || 0) + 1;
-
   return result;
-
   async function processPackage(pkgDir: string, resObj: ScanResult) {
-    const pkgJsonPath = path.join(pkgDir, 'package.json');
-    if (!exists(pkgJsonPath)) return;
-    const data = readPackageJsonSync(pkgJsonPath);
+    const pkgJsonCaminho = path.join(pkgDir, 'package.json');
+    if (!exists(pkgJsonCaminho)) return;
+    const data = readPackageJsonSync(pkgJsonCaminho);
     if (!data) return;
     const name = data.name || path.basename(pkgDir);
     const version = data.version || '0.0.0';
-    const rawLicense = data.license || data.licenses || null;
-    const licenseValue = await normalizeLicense(rawLicense || 'UNKNOWN');
-    const licenseFile = findLicenseFile(pkgDir);
+    const rawLicenca = data.license || data.licenses || null;
+    const licenseValor = await normalizeLicense(rawLicenca || 'UNKNOWN');
+    const licenseArquivo = findLicenseFile(pkgDir);
     resObj.packages.push({
       name,
       version,
-      license: licenseValue,
-      repository:
-        (data.repository && (typeof data.repository === 'string' ? data.repository : data.repository.url)) || null,
+      license: licenseValor,
+      repository: data.repository && (typeof data.repository === 'string' ? data.repository : data.repository.url) || null,
       private: !!data.private,
-      licenseFile: licenseFile ? licenseFile.file : null,
-      licenseText: licenseFile ? licenseFile.text : null,
-      path: pkgDir,
+      licenseArquivo: licenseArquivo ? licenseArquivo.file : null,
+      licenseText: licenseArquivo ? licenseArquivo.text : null,
+      path: pkgDir
     });
   }
 }
-
 export async function fsReaddir(p: string): Promise<string[]> {
   const fs = await import('node:fs');
-  return fs.promises.readdir(p, { withFileTypes: false }).catch(() => []);
+  return fs.promises.readdir(p, {
+    withFileTypes: false
+  }).catch(() => []);
 }
-
 async function fsStatIsDir(p: string): Promise<boolean> {
   const fs = await import('node:fs');
   try {
@@ -93,11 +87,10 @@ async function fsStatIsDir(p: string): Promise<boolean> {
     return false;
   }
 }
-
 export async function scanCommand(opts: ScanOptions = {}): Promise<ScanResult> {
   const res = await scan(opts);
   // Removido `: unknown` e `as unknown` — res.packages já é tipado corretamente
-  const problematic = res.packages.filter((p) => p.license === 'UNKNOWN');
+  const problematic = res.packages.filter(p => p.license === 'UNKNOWN');
   res.problematic = problematic;
   return res;
 }

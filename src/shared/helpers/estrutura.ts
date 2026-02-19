@@ -2,17 +2,12 @@
 // @doutor-disable tipo-literal-inline-complexo
 // Justificativa: tipos locais para helpers de estrutura
 import path from 'node:path';
-
 import { lerEstado } from '@shared/persistence/persistencia.js';
-
 import type { NomeacaoEstilo, OpcoesEstrategista, ParseNomeResultado } from '@';
 
 // Re-exporta os tipos para compatibilidade
 export type { NomeacaoEstilo, OpcoesEstrategista, ParseNomeResultado };
-
-export const CATEGORIAS_DEFAULT: Required<
-  NonNullable<OpcoesEstrategista['categoriasMapa']>
-> = {
+export const CATEGORIAS_PADRAO: Required<NonNullable<OpcoesEstrategista['categoriasMapa']>> = {
   controller: 'controllers',
   controllers: 'controllers',
   webhook: 'webhooks',
@@ -26,81 +21,51 @@ export const CATEGORIAS_DEFAULT: Required<
   spec: '__tests__',
   type: 'types',
   types: 'types',
-  handler: 'handlers',
+  handler: 'handlers'
 };
-
-export const DEFAULT_OPCOES: Required<
-  Pick<
-    OpcoesEstrategista,
-    | 'raizCodigo'
-    | 'criarSubpastasPorEntidade'
-    | 'apenasCategoriasConfiguradas'
-    | 'categoriasMapa'
-    | 'ignorarPastas'
-  >
-> &
-  Pick<OpcoesEstrategista, 'estiloPreferido'> = {
+export const PADRAO_OPCOES: Required<Pick<OpcoesEstrategista, 'raizCodigo' | 'criarSubpastasPorEntidade' | 'apenasCategoriasConfiguradas' | 'categoriasMapa' | 'ignorarPastas'>> & Pick<OpcoesEstrategista, 'estiloPreferido'> = {
   raizCodigo: 'src',
   criarSubpastasPorEntidade: true,
   apenasCategoriasConfiguradas: true,
   estiloPreferido: 'kebab',
   categoriasMapa: {},
-  ignorarPastas: [
-    'node_modules',
-    '.git',
-    'dist',
-    'build',
-    'coverage',
-    '.doutor',
-  ],
+  ignorarPastas: ['node_modules', '.git', 'dist', 'build', 'coverage', '.doutor']
 };
 
 // Presets de estrutura: baseiam-se nos defaults, aplicando ajustes de organização
-export const PRESETS: Record<
-  string,
-  Partial<typeof DEFAULT_OPCOES> & { nome: string }
-> = {
+export const PRESETS: Record<string, Partial<typeof PADRAO_OPCOES> & {
+  nome: string;
+}> = {
   doutor: {
     nome: 'doutor',
     // No preset "doutor" não organizamos por entidade/domains
     criarSubpastasPorEntidade: false,
     apenasCategoriasConfiguradas: false,
-    categoriasMapa: { ...CATEGORIAS_DEFAULT },
-    ignorarPastas: [
-      ...DEFAULT_OPCOES.ignorarPastas,
-      'tests',
-      'tests/fixtures',
-      'src/analistas',
-      'src/arquitetos',
-      'src/relatorios',
-      'src/guardian',
-      'src/nucleo',
-      'src/cli',
-      'src/zeladores',
-    ],
+    categoriasMapa: {
+      ...CATEGORIAS_PADRAO
+    },
+    ignorarPastas: [...PADRAO_OPCOES.ignorarPastas, 'tests', 'tests/fixtures', 'src/analistas', 'src/arquitetos', 'src/relatorios', 'src/guardian', 'src/nucleo', 'src/cli', 'src/zeladores']
   },
   'node-community': {
     nome: 'node-community',
     criarSubpastasPorEntidade: false,
     apenasCategoriasConfiguradas: false,
     categoriasMapa: {
-      ...CATEGORIAS_DEFAULT,
-    },
+      ...CATEGORIAS_PADRAO
+    }
   },
   'ts-lib': {
     nome: 'ts-lib',
     criarSubpastasPorEntidade: false,
     apenasCategoriasConfiguradas: false,
     categoriasMapa: {
-      ...CATEGORIAS_DEFAULT,
-    },
-  },
+      ...CATEGORIAS_PADRAO
+    }
+  }
 };
-
 export function normalizarRel(p: string): string {
   return p.replace(/\\/g, '/');
 }
-
 export function deveIgnorar(rel: string, ignorar: string[]): boolean {
   const norm = normalizarRel(rel);
   // Ignora se qualquer padrão ocorrer em qualquer nível do caminho (não apenas na raiz)
@@ -108,7 +73,7 @@ export function deveIgnorar(rel: string, ignorar: string[]): boolean {
   //  - 'node_modules' casa 'node_modules/...', 'a/b/node_modules/...'
   //  - 'dist' casa 'dist/...', 'x/dist/...'
   //  - padrões com subpastas ('coverage/html') ainda casam por substring segmentada
-  return ignorar.some((raw) => {
+  return ignorar.some(raw => {
     const pat = normalizarRel(raw);
     if (!pat) return false;
     if (norm === pat) return true;
@@ -125,68 +90,60 @@ export function deveIgnorar(rel: string, ignorar: string[]): boolean {
     return false;
   });
 }
-
-export function parseNomeArquivo(baseName: string): ParseNomeResultado {
-  const semExt = baseName.replace(/\.[^.]+$/i, '');
+export function parseNomeArquivo(baseNome: string): ParseNomeResultado {
+  const semExt = baseNome.replace(/\.[^.]+$/i, '');
   const lower = semExt.toLowerCase();
 
   // Apenas aceite categorias reconhecidas (singular/plural) para evitar falsos positivos
-  const CATS = new Set(
-    Object.keys(CATEGORIAS_DEFAULT).map((c) => c.toLowerCase()),
-  );
-
+  const CATS = new Set(Object.keys(CATEGORIAS_PADRAO).map(c => c.toLowerCase()));
   const dotMatch = /^(?<ent>[\w-]+)\.(?<cat>[\w-]+)$/.exec(semExt);
   if (dotMatch?.groups) {
     const cat = dotMatch.groups.cat.toLowerCase();
-    if (CATS.has(cat)) return { entidade: dotMatch.groups.ent, categoria: cat };
+    if (CATS.has(cat)) return {
+      entidade: dotMatch.groups.ent,
+      categoria: cat
+    };
   }
-
   const kebabMatch = /^(?<ent>[\w-]+)-(?<cat>[\w-]+)$/.exec(lower);
   if (kebabMatch?.groups) {
     const cat = kebabMatch.groups.cat.toLowerCase();
-    if (CATS.has(cat))
-      return { entidade: kebabMatch.groups.ent, categoria: cat };
-  }
-
-  const camelMatch =
-    /^(?<ent>[A-Za-z][A-Za-z0-9]*?)(?<cat>Controller|Webhook|Cliente|Client|Service|Repository)$/.exec(
-      semExt,
-    );
-  if (camelMatch?.groups)
-    return {
-      entidade: camelMatch.groups.ent,
-      categoria: camelMatch.groups.cat.toLowerCase(),
+    if (CATS.has(cat)) return {
+      entidade: kebabMatch.groups.ent,
+      categoria: cat
     };
-
-  const tokens = [
-    'controller',
-    'controllers',
-    'webhook',
-    'webhooks',
-    'cliente',
-    'client',
-    'service',
-    'repository',
-  ];
+  }
+  const camelMatch = /^(?<ent>[A-Za-z][A-Za-z0-9]*?)(?<cat>Controller|Webhook|Cliente|Client|Service|Repository)$/.exec(semExt);
+  if (camelMatch?.groups) return {
+    entidade: camelMatch.groups.ent,
+    categoria: camelMatch.groups.cat.toLowerCase()
+  };
+  const tokens = ['controller', 'controllers', 'webhook', 'webhooks', 'cliente', 'client', 'service', 'repository'];
   for (const tk of tokens) {
     if (lower.endsWith(`-${tk}`) || lower.endsWith(`.${tk}`)) {
       const entidade = lower.replace(new RegExp(`[.-]${tk}$`), '');
-      return { entidade: entidade || null, categoria: tk };
+      return {
+        entidade: entidade || null,
+        categoria: tk
+      };
     }
   }
-  return { entidade: null, categoria: null };
+  return {
+    entidade: null,
+    categoria: null
+  };
 }
-
-export function destinoPara(
-  relPath: string,
-  raizCodigo: string,
-  criarSubpastasPorEntidade: boolean,
-  apenasCategoriasConfiguradas: boolean,
-  categoriasMapa: Record<string, string>,
-): { destinoDir: string | null; motivo?: string } {
-  const baseName = path.posix.basename(normalizarRel(relPath));
-  const { entidade, categoria } = parseNomeArquivo(baseName);
-  if (!categoria) return { destinoDir: null };
+export function destinoPara(relPath: string, raizCodigo: string, criarSubpastasPorEntidade: boolean, apenasCategoriasConfiguradas: boolean, categoriasMapa: Record<string, string>): {
+  destinoDir: string | null;
+  motivo?: string;
+} {
+  const baseNome = path.posix.basename(normalizarRel(relPath));
+  const {
+    entidade,
+    categoria
+  } = parseNomeArquivo(baseNome);
+  if (!categoria) return {
+    destinoDir: null
+  };
 
   // Evita pluralização incorreta quando já termina com 's'
   const normCat = categoria.toLowerCase();
@@ -194,75 +151,60 @@ export function destinoPara(
   if (!pastaMapeada && apenasCategoriasConfiguradas) {
     return {
       destinoDir: null,
-      motivo: `categoria ${categoria} não configurada`,
+      motivo: `categoria ${categoria} não configurada`
     };
   }
-  const pastaFinal =
-    pastaMapeada || (normCat.endsWith('s') ? normCat : `${normCat}s`);
+  const pastaFinal = pastaMapeada || (normCat.endsWith('s') ? normCat : `${normCat}s`);
   if (criarSubpastasPorEntidade && entidade) {
-    const ent = entidade
-      .toString()
-      .replace(/[^a-z0-9-]/gi, '')
-      .toLowerCase();
+    const ent = entidade.toString().replace(/[^a-z0-9-]/gi, '').toLowerCase();
     const dir = path.posix.join(raizCodigo, 'domains', ent, pastaFinal);
     return {
       destinoDir: dir,
-      motivo: `categoria ${categoria} organizada por entidade ${ent}`,
+      motivo: `categoria ${categoria} organizada por entidade ${ent}`
     };
   }
   return {
     destinoDir: path.posix.join(raizCodigo, pastaFinal),
-    motivo: `categoria ${categoria} organizada por camada`,
+    motivo: `categoria ${categoria} organizada por camada`
   };
 }
-
-export async function carregarConfigEstrategia(
-  baseDir: string,
-  overrides?: OpcoesEstrategista,
-): Promise<Required<typeof DEFAULT_OPCOES>> {
+export async function carregarConfigEstrategia(baseDir: string, overrides?: OpcoesEstrategista): Promise<Required<typeof PADRAO_OPCOES>> {
   const caminho = path.join(baseDir, '.doutor', 'estrutura.json');
   const lido = await lerEstado<Record<string, unknown> | []>(caminho);
-  const cfgArquivo = (
-    lido && !Array.isArray(lido) && typeof lido === 'object' ? lido : {}
-  ) as (Partial<typeof DEFAULT_OPCOES> & { preset?: string }) | {};
-
-  const nomePreset = (overrides?.preset ||
-    (cfgArquivo as { preset?: string }).preset) as string | undefined;
-  const preset =
-    nomePreset && PRESETS[nomePreset]?.nome ? PRESETS[nomePreset] : undefined;
+  const cfgArquivo = (lido && !Array.isArray(lido) && typeof lido === 'object' ? lido : {}) as (Partial<typeof PADRAO_OPCOES> & {
+    preset?: string;
+  }) | {};
+  const nomePreset = (overrides?.preset || (cfgArquivo as {
+    preset?: string;
+  }).preset) as string | undefined;
+  const preset = nomePreset && PRESETS[nomePreset]?.nome ? PRESETS[nomePreset] : undefined;
 
   // Merge determinístico: DEFAULT -> PRESET -> ARQUIVO -> OVERRIDES (apenas chaves definidas)
-  const base = { ...DEFAULT_OPCOES } as Required<typeof DEFAULT_OPCOES>;
-  const aplicarParcial = (src?: Partial<typeof DEFAULT_OPCOES>) => {
+  const base = {
+    ...PADRAO_OPCOES
+  } as Required<typeof PADRAO_OPCOES>;
+  const aplicarParcial = (src?: Partial<typeof PADRAO_OPCOES>) => {
     if (!src) return;
     if (src.raizCodigo) base.raizCodigo = src.raizCodigo as string;
-    if (typeof src.criarSubpastasPorEntidade === 'boolean')
-      base.criarSubpastasPorEntidade = src.criarSubpastasPorEntidade as boolean;
-    if (typeof src.apenasCategoriasConfiguradas === 'boolean')
-      base.apenasCategoriasConfiguradas =
-        src.apenasCategoriasConfiguradas as boolean;
-    if (src.estiloPreferido)
-      base.estiloPreferido = src.estiloPreferido as NomeacaoEstilo;
-    if (src.categoriasMapa)
-      base.categoriasMapa = {
-        ...base.categoriasMapa,
-        ...src.categoriasMapa,
-      } as Record<string, string>;
-    if (src.ignorarPastas && Array.isArray(src.ignorarPastas))
-      base.ignorarPastas = Array.from(
-        new Set([...base.ignorarPastas, ...src.ignorarPastas]),
-      );
+    if (typeof src.criarSubpastasPorEntidade === 'boolean') base.criarSubpastasPorEntidade = src.criarSubpastasPorEntidade as boolean;
+    if (typeof src.apenasCategoriasConfiguradas === 'boolean') base.apenasCategoriasConfiguradas = src.apenasCategoriasConfiguradas as boolean;
+    if (src.estiloPreferido) base.estiloPreferido = src.estiloPreferido as NomeacaoEstilo;
+    if (src.categoriasMapa) base.categoriasMapa = {
+      ...base.categoriasMapa,
+      ...src.categoriasMapa
+    } as Record<string, string>;
+    if (src.ignorarPastas && Array.isArray(src.ignorarPastas)) base.ignorarPastas = Array.from(new Set([...base.ignorarPastas, ...src.ignorarPastas]));
   };
-  aplicarParcial(preset as Partial<typeof DEFAULT_OPCOES>);
-  aplicarParcial(cfgArquivo as Partial<typeof DEFAULT_OPCOES>);
-  aplicarParcial(overrides as Partial<typeof DEFAULT_OPCOES>);
+  aplicarParcial(preset as Partial<typeof PADRAO_OPCOES>);
+  aplicarParcial(cfgArquivo as Partial<typeof PADRAO_OPCOES>);
+  aplicarParcial(overrides as Partial<typeof PADRAO_OPCOES>);
 
   // No modo de preset (apenasCategoriasConfiguradas=false), garantimos defaults base.
   // No modo manual (true), o usuário controla explicitamente o que será mapeado.
   if (!base.apenasCategoriasConfiguradas) {
     base.categoriasMapa = {
-      ...CATEGORIAS_DEFAULT,
-      ...base.categoriasMapa,
+      ...CATEGORIAS_PADRAO,
+      ...base.categoriasMapa
     } as Record<string, string>;
   }
   return base;

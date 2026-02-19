@@ -4,27 +4,14 @@
 // Sistema inteligente de filtragem e priorização de relatórios
 // Agrupa problemas similares e prioriza por impacto para evitar sobrecarga de informação
 
-import {
-  AGRUPAMENTOS_MENSAGEM,
-  PRIORIDADES,
-  RelatorioMessages,
-} from '@core/messages/index.js';
-
-import type {
-  Ocorrencia,
-  OcorrenciaNivel,
-  ProblemaAgrupado,
-  RelatorioResumo,
-} from '@';
+import { AGRUPAMENTOS_MENSAGEM, PRIORIDADES, RelatorioMensagens } from '@core/messages/index.js';
+import type { Ocorrencia, OcorrenciaNivel, ProblemaAgrupado, RelatorioResumo } from '@';
 
 /**
  * Processa e filtra ocorrências para gerar um relatório resumido inteligente
  */
 
-export function processarRelatorioResumo(
-  ocorrencias: Ocorrencia[],
-  limitePrioridade = 30,
-): RelatorioResumo {
+export function processarRelatorioResumo(ocorrencias: Ocorrencia[], limitePrioridade = 30): RelatorioResumo {
   // Agrupar ocorrências por tipo e padrões de mensagem
   const gruposPorTipo = new Map<string, Ocorrencia[]>();
   const gruposPorMensagem = new Map<string, Ocorrencia[]>();
@@ -45,7 +32,6 @@ export function processarRelatorioResumo(
   for (const ocorrencia of ocorrencias) {
     const mensagem = String(ocorrencia.mensagem || '');
     let agrupado = false;
-
     for (const grupo of AGRUPAMENTOS_MENSAGEM) {
       if (grupo.padrao.test(mensagem)) {
         if (!gruposPorMensagem.has(grupo.categoria)) {
@@ -59,7 +45,6 @@ export function processarRelatorioResumo(
         break;
       }
     }
-
     if (!agrupado) {
       const tipo = String(ocorrencia.tipo || 'OUTROS');
       if (!gruposPorMensagem.has(tipo)) {
@@ -79,17 +64,14 @@ export function processarRelatorioResumo(
   for (const [tipo, ocorrenciasTipo] of gruposPorTipo) {
     const config = PRIORIDADES[tipo] || {
       prioridade: 'baixa' as const,
-      icone: '??',
+      icone: '??'
     };
 
     // Verificar se já existe agrupamento por mensagem
-    const jaAgrupado = Array.from(gruposPorMensagem.keys()).some(
-      (categoria) => {
-        const ocorrenciasGrupo = gruposPorMensagem.get(categoria) || [];
-        return ocorrenciasGrupo.some((o) => o.tipo === tipo);
-      },
-    );
-
+    const jaAgrupado = Array.from(gruposPorMensagem.keys()).some(categoria => {
+      const ocorrenciasGrupo = gruposPorMensagem.get(categoria) || [];
+      return ocorrenciasGrupo.some(o => o.tipo === tipo);
+    });
     if (!jaAgrupado && ocorrenciasTipo.length > 0) {
       problemasAgrupados.push({
         categoria: tipo,
@@ -98,7 +80,7 @@ export function processarRelatorioResumo(
         titulo: formatarTituloTipo(tipo),
         quantidade: ocorrenciasTipo.length,
         ocorrencias: ocorrenciasTipo,
-        resumo: gerarResumoOcorrencias(ocorrenciasTipo),
+        resumo: gerarResumoOcorrencias(ocorrenciasTipo)
       });
     }
   }
@@ -109,48 +91,40 @@ export function processarRelatorioResumo(
     if (ocorrenciasGrupo.length > 0) {
       problemasAgrupados.push({
         categoria: agrupamento.categoria,
-        prioridade: 'critica', // Grupos de mensagem são sempre prioritários
+        prioridade: 'critica',
+        // Grupos de mensagem são sempre prioritários
         icone: '??',
         titulo: agrupamento.titulo,
         quantidade: ocorrenciasGrupo.length,
         ocorrencias: ocorrenciasGrupo,
         resumo: `${ocorrenciasGrupo.length} ocorrências detectadas`,
-        acaoSugerida: agrupamento.acaoSugerida,
+        acaoSugerida: agrupamento.acaoSugerida
       });
     }
   }
 
   // Ordenar por prioridade e quantidade
   problemasAgrupados.sort((a, b) => {
-    const prioridadeOrdem = { critica: 0, alta: 1, media: 2, baixa: 3 };
+    const prioridadeOrdem = {
+      critica: 0,
+      alta: 1,
+      media: 2,
+      baixa: 3
+    };
     const prioA = prioridadeOrdem[a.prioridade];
     const prioB = prioridadeOrdem[b.prioridade];
-
     if (prioA !== prioB) return prioA - prioB;
     return b.quantidade - a.quantidade; // Mais ocorrências primeiro
   });
 
   // Separar por n�veis de prioridade
-  const problemasCriticos = problemasAgrupados.filter(
-    (p) => p.prioridade === 'critica',
-  );
-  const problemasAltos = problemasAgrupados.filter(
-    (p) => p.prioridade === 'alta',
-  );
-  const problemasOutros = problemasAgrupados.filter((p) =>
-    ['media', 'baixa'].includes(p.prioridade),
-  );
+  const problemasCriticos = problemasAgrupados.filter(p => p.prioridade === 'critica');
+  const problemasAltos = problemasAgrupados.filter(p => p.prioridade === 'alta');
+  const problemasOutros = problemasAgrupados.filter(p => ['media', 'baixa'].includes(p.prioridade));
 
   // Calcular estat�sticas
-  const arquivosAfetados = new Set(
-    ocorrencias
-      .map((o) => o.relPath)
-      .filter((path) => path && path !== 'undefined'),
-  ).size;
-
-  const problemasPrioritarios =
-    problemasCriticos.length + problemasAltos.length;
-
+  const arquivosAfetados = new Set(ocorrencias.map(o => o.relPath).filter(path => path && path !== 'undefined')).size;
+  const problemasPrioritarios = problemasCriticos.length + problemasAltos.length;
   return {
     problemasCriticos: problemasCriticos.slice(0, limitePrioridade / 3),
     problemasAltos: problemasAltos.slice(0, limitePrioridade / 3),
@@ -159,8 +133,8 @@ export function processarRelatorioResumo(
       totalOcorrencias: ocorrencias.length,
       arquivosAfetados,
       problemasPrioritarios,
-      problemasAgrupados: problemasAgrupados.length,
-    },
+      problemasAgrupados: problemasAgrupados.length
+    }
   };
 }
 
@@ -187,13 +161,9 @@ function formatarTituloTipo(tipo: string): string {
     IDENTIFICACAO_PROJETO: 'Identificação do Projeto',
     SUGESTAO_MELHORIA: 'Sugestões de Melhoria',
     EVIDENCIA_CONTEXTO: 'Evidências de Contexto',
-    TECNOLOGIAS_ALTERNATIVAS: 'Tecnologias Alternativas',
+    TECNOLOGIAS_ALTERNATIVAS: 'Tecnologias Alternativas'
   };
-
-  return (
-    titulos[tipo] ||
-    tipo.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())
-  );
+  return titulos[tipo] || tipo.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 }
 
 /**
@@ -202,23 +172,12 @@ function formatarTituloTipo(tipo: string): string {
 
 function gerarResumoOcorrencias(ocorrencias: Ocorrencia[]): string {
   if (ocorrencias.length === 0) return 'Nenhuma ocorrência';
-
-  const arquivos = new Set(ocorrencias.map((o) => o.relPath).filter(Boolean));
-  const niveisFrequentes = ocorrencias
-    .map((o) => o.nivel)
-    .filter((nivel): nivel is OcorrenciaNivel => Boolean(nivel))
-    .reduce(
-      (acc, nivel) => {
-        acc[nivel] = (acc[nivel] || 0) + 1;
-        return acc;
-      },
-      {} as Record<OcorrenciaNivel, number>,
-    );
-
-  const nivelMaisFrequente = Object.entries(niveisFrequentes).sort(
-    ([, a], [, b]) => (b as number) - (a as number),
-  )[0]?.[0];
-
+  const arquivos = new Set(ocorrencias.map(o => o.relPath).filter(Boolean));
+  const niveisFrequentes = ocorrencias.map(o => o.nivel).filter((nivel): nivel is OcorrenciaNivel => Boolean(nivel)).reduce((acc, nivel) => {
+    acc[nivel] = (acc[nivel] || 0) + 1;
+    return acc;
+  }, {} as Record<OcorrenciaNivel, number>);
+  const nivelMaisFrequente = Object.entries(niveisFrequentes).sort(([, a], [, b]) => (b as number) - (a as number))[0]?.[0];
   let resumo = `${ocorrencias.length} ocorrências`;
   if (arquivos.size > 1) {
     resumo += ` em ${arquivos.size} arquivos`;
@@ -226,7 +185,6 @@ function gerarResumoOcorrencias(ocorrencias: Ocorrencia[]): string {
   if (nivelMaisFrequente) {
     resumo += ` (maioria: ${nivelMaisFrequente})`;
   }
-
   return resumo;
 }
 
@@ -234,60 +192,48 @@ function gerarResumoOcorrencias(ocorrencias: Ocorrencia[]): string {
  * Gera relatório Markdown resumido
  */
 
-export async function gerarRelatorioMarkdownResumo(
-  relatorioResumo: RelatorioResumo,
-  outputPath: string,
-): Promise<void> {
-  const { problemasCriticos, problemasAltos, problemasOutros, estatisticas } =
-    relatorioResumo;
-
+export async function gerarRelatorioMarkdownResumo(relatorioResumo: RelatorioResumo, outputCaminho: string): Promise<void> {
+  const {
+    problemasCriticos,
+    problemasAltos,
+    problemasOutros,
+    estatisticas
+  } = relatorioResumo;
   const linhas: string[] = [];
 
   // Cabeçalho usando mensagens centralizadas
-  linhas.push(`# ${RelatorioMessages.resumo.titulo}`);
+  linhas.push(`# ${RelatorioMensagens.resumo.titulo}`);
   linhas.push('');
-  linhas.push(`> ${RelatorioMessages.resumo.introducao}`);
+  linhas.push(`> ${RelatorioMensagens.resumo.introducao}`);
   linhas.push('');
 
   // Estatisticas usando mensagens centralizadas
-  linhas.push(`## ${RelatorioMessages.resumo.secoes.estatisticas.titulo}`);
+  linhas.push(`## ${RelatorioMensagens.resumo.secoes.estatisticas.titulo}`);
   linhas.push('');
-  linhas.push(
-    `- **${RelatorioMessages.resumo.secoes.estatisticas.totalOcorrencias}**: ${estatisticas.totalOcorrencias.toLocaleString()}`,
-  );
-  linhas.push(
-    `- **${RelatorioMessages.resumo.secoes.estatisticas.arquivosAfetados}**: ${estatisticas.arquivosAfetados.toLocaleString()}`,
-  );
-  linhas.push(
-    `- **${RelatorioMessages.resumo.secoes.estatisticas.problemasPrioritarios}**: ${estatisticas.problemasPrioritarios}`,
-  );
-  linhas.push(
-    `- **${RelatorioMessages.resumo.secoes.estatisticas.problemasAgrupados}**: ${estatisticas.problemasAgrupados}`,
-  );
+  linhas.push(`- **${RelatorioMensagens.resumo.secoes.estatisticas.totalOcorrencias}**: ${estatisticas.totalOcorrencias.toLocaleString()}`);
+  linhas.push(`- **${RelatorioMensagens.resumo.secoes.estatisticas.arquivosAfetados}**: ${estatisticas.arquivosAfetados.toLocaleString()}`);
+  linhas.push(`- **${RelatorioMensagens.resumo.secoes.estatisticas.problemasPrioritarios}**: ${estatisticas.problemasPrioritarios}`);
+  linhas.push(`- **${RelatorioMensagens.resumo.secoes.estatisticas.problemasAgrupados}**: ${estatisticas.problemasAgrupados}`);
   linhas.push('');
 
   // Problemas críticos usando mensagens centralizadas
   if (problemasCriticos.length > 0) {
-    linhas.push(`## ${RelatorioMessages.resumo.secoes.criticos.titulo}`);
+    linhas.push(`## ${RelatorioMensagens.resumo.secoes.criticos.titulo}`);
     linhas.push('');
     for (const problema of problemasCriticos) {
       linhas.push(`### ${problema.icone} ${problema.titulo}`);
       linhas.push('');
-      linhas.push(
-        `**${RelatorioMessages.resumo.labels.quantidade}**: ${problema.quantidade} ocorrências`,
-      );
+      linhas.push(`**${RelatorioMensagens.resumo.labels.quantidade}**: ${problema.quantidade} ocorrências`);
       linhas.push(`**Resumo**: ${problema.resumo}`);
       if (problema.acaoSugerida) {
-        linhas.push(
-          `**${RelatorioMessages.resumo.labels.acaoSugerida}**: ${problema.acaoSugerida}`,
-        );
+        linhas.push(`**${RelatorioMensagens.resumo.labels.acaoSugerida}**: ${problema.acaoSugerida}`);
       }
       linhas.push('');
 
       // Mostrar algumas ocorrências de exemplo
       const exemplos = problema.ocorrencias.slice(0, 3);
       if (exemplos.length > 0) {
-        linhas.push(`**${RelatorioMessages.resumo.labels.exemplos}:**`);
+        linhas.push(`**${RelatorioMensagens.resumo.labels.exemplos}:**`);
         for (const exemplo of exemplos) {
           const arquivo = exemplo.relPath || 'arquivo desconhecido';
           const linha = exemplo.linha ? `:${exemplo.linha}` : '';
@@ -303,18 +249,14 @@ export async function gerarRelatorioMarkdownResumo(
 
   // Problemas altos usando mensagens centralizadas
   if (problemasAltos.length > 0) {
-    linhas.push(`## ${RelatorioMessages.resumo.secoes.altos.titulo}`);
+    linhas.push(`## ${RelatorioMensagens.resumo.secoes.altos.titulo}`);
     linhas.push('');
     for (const problema of problemasAltos) {
       linhas.push(`### ${problema.icone} ${problema.titulo}`);
       linhas.push('');
-      linhas.push(
-        `**${RelatorioMessages.resumo.labels.quantidade}**: ${problema.quantidade} | **Resumo**: ${problema.resumo}`,
-      );
+      linhas.push(`**${RelatorioMensagens.resumo.labels.quantidade}**: ${problema.quantidade} | **Resumo**: ${problema.resumo}`);
       if (problema.acaoSugerida) {
-        linhas.push(
-          `**${RelatorioMessages.resumo.labels.acaoSugerida}**: ${problema.acaoSugerida}`,
-        );
+        linhas.push(`**${RelatorioMensagens.resumo.labels.acaoSugerida}**: ${problema.acaoSugerida}`);
       }
       linhas.push('');
     }
@@ -322,15 +264,12 @@ export async function gerarRelatorioMarkdownResumo(
 
   // Outros problemas (resumo) usando mensagens centralizadas
   if (problemasOutros.length > 0) {
-    linhas.push(`## ${RelatorioMessages.resumo.secoes.outros.titulo}`);
+    linhas.push(`## ${RelatorioMensagens.resumo.secoes.outros.titulo}`);
     linhas.push('');
     linhas.push('| Categoria | Quantidade | Resumo |');
     linhas.push('|-----------|------------|--------|');
-
     for (const problema of problemasOutros) {
-      linhas.push(
-        `| ${problema.icone} ${problema.titulo} | ${problema.quantidade} | ${problema.resumo} |`,
-      );
+      linhas.push(`| ${problema.icone} ${problema.titulo} | ${problema.quantidade} | ${problema.resumo} |`);
     }
     linhas.push('');
   }
@@ -338,14 +277,13 @@ export async function gerarRelatorioMarkdownResumo(
   // Rodapé
   linhas.push('---');
   linhas.push('');
-  linhas.push(
-    '?? **Dica**: Para ver todos os detalhes, gere o relatório completo em modo normal.',
-  );
+  linhas.push('?? **Dica**: Para ver todos os detalhes, gere o relatório completo em modo normal.');
   linhas.push('');
   linhas.push(`**Relatório gerado em**: ${new Date().toLocaleString('pt-BR')}`);
-
-  const { salvarEstado } = await import('@shared/persistence/persistencia.js');
-  await salvarEstado(outputPath, linhas.join('\n'));
+  const {
+    salvarEstado
+  } = await import('@shared/persistence/persistencia.js');
+  await salvarEstado(outputCaminho, linhas.join('\n'));
 }
 
 /**
@@ -363,30 +301,16 @@ export function gerarResumoExecutivo(ocorrencias: Ocorrencia[]): {
   detalhes: ProblemaAgrupado[];
 } {
   const relatorio = processarRelatorioResumo(ocorrencias);
-
-  const problemasCriticos = relatorio.problemasCriticos.reduce(
-    (sum: number, p: ProblemaAgrupado) => sum + p.quantidade,
-    0,
-  );
-  const problemasAltos = relatorio.problemasAltos.reduce(
-    (sum: number, p: ProblemaAgrupado) => sum + p.quantidade,
-    0,
-  );
+  const problemasCriticos = relatorio.problemasCriticos.reduce((sum: number, p: ProblemaAgrupado) => sum + p.quantidade, 0);
+  const problemasAltos = relatorio.problemasAltos.reduce((sum: number, p: ProblemaAgrupado) => sum + p.quantidade, 0);
 
   // Contadores específicos
-  const vulnerabilidades = ocorrencias.filter(
-    (o) =>
-      o.tipo === 'VULNERABILIDADE_SEGURANCA' || o.tipo === 'PROBLEMA_SEGURANCA',
-  ).length;
-
-  const quickFixes = ocorrencias.filter(
-    (o) => o.tipo === 'QUICK_FIX_DISPONIVEL',
-  ).length;
+  const vulnerabilidades = ocorrencias.filter(o => o.tipo === 'VULNERABILIDADE_SEGURANCA' || o.tipo === 'PROBLEMA_SEGURANCA').length;
+  const quickFixes = ocorrencias.filter(o => o.tipo === 'QUICK_FIX_DISPONIVEL').length;
 
   // Determina recomendação baseada em prioridade
   let recomendacao: 'verde' | 'amarelo' | 'vermelho';
   let mensagem: string;
-
   if (problemasCriticos > 10) {
     recomendacao = 'vermelho';
     mensagem = `?? CRÍTICO: ${problemasCriticos} problemas de segurança/estabilidade. Ação imediata necessária.`;
@@ -397,7 +321,6 @@ export function gerarResumoExecutivo(ocorrencias: Ocorrencia[]): {
     recomendacao = 'verde';
     mensagem = `? BOM: Apenas problemas menores. ${quickFixes} correções automáticas disponíveis.`;
   }
-
   return {
     problemasCriticos,
     problemasAltos,
@@ -405,6 +328,6 @@ export function gerarResumoExecutivo(ocorrencias: Ocorrencia[]): {
     quickFixes,
     recomendacao,
     mensagem,
-    detalhes: [...relatorio.problemasCriticos, ...relatorio.problemasAltos],
+    detalhes: [...relatorio.problemasCriticos, ...relatorio.problemasAltos]
   };
 }

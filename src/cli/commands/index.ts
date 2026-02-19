@@ -22,3 +22,7 @@ export { comandoReestruturar } from './comando-reestruturar.js';
 
 // Comando de reversão (diferente padrão de export)
 export { registrarComandoReverter } from './comando-reverter.js';
+
+// Comandos de manutenção de nomes
+export { comandoNames } from './comando-names.js';
+export { comandoRename } from './comando-rename.js';

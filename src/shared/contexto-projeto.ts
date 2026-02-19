@@ -14,23 +14,25 @@ export type { ContextoProjeto, DetectarContextoOpcoes };
  * Detecta o contexto de um arquivo/projeto para análise inteligente
  */
 
-export function detectarContextoProjeto(
-  opcoes: DetectarContextoOpcoes,
-): ContextoProjeto {
-  const { arquivo, conteudo, relPath, packageJson } = opcoes;
+export function detectarContextoProjeto(opcoes: DetectarContextoOpcoes): ContextoProjeto {
+  const {
+    arquivo,
+    conteudo,
+    relPath,
+    packageJson
+  } = opcoes;
   const p = arquivo.replace(/\\/g, '/').toLowerCase();
   const rel = (relPath || arquivo).replace(/\\/g, '/').toLowerCase();
-
   const contexto: ContextoProjeto = {
     isBot: false,
     isCLI: false,
     isWebApp: false,
     isLibrary: false,
     isTest: false,
-    isConfig: false,
+    isConfiguracao: false,
     isInfrastructure: false,
     frameworks: [],
-    linguagens: [],
+    linguagens: []
   };
 
   // Detecta linguagens
@@ -42,11 +44,7 @@ export function detectarContextoProjeto(
   if (/\.(css)$/.test(p)) contexto.linguagens.push('css');
 
   // Detecta se é arquivo de teste (PRIORIDADE ALTA - deve ser verificado primeiro)
-  contexto.isTest =
-    /(^|\/)tests?(\/|\.)/i.test(rel) ||
-    /\.(test|spec)\.(ts|js|tsx|jsx)$/i.test(p) ||
-    /__tests__/.test(rel) ||
-    /describe\s*\(|it\s*\(|test\s*\(|expect\s*\(/.test(conteudo);
+  contexto.isTest = /(^|\/)tests?(\/|\.)/i.test(rel) || /\.(test|spec)\.(ts|js|tsx|jsx)$/i.test(p) || /__tests__/.test(rel) || /describe\s*\(|it\s*\(|test\s*\(|expect\s*\(/.test(conteudo);
 
   // Se é arquivo de teste, não deve ser classificado como outros tipos
   if (contexto.isTest) {
@@ -55,32 +53,20 @@ export function detectarContextoProjeto(
       isBot: false,
       isCLI: false,
       isWebApp: false,
-      isLibrary: false,
+      isLibrary: false
     };
   }
 
   // Detecta se é arquivo de configuração
-  contexto.isConfig =
-    /config|\.config\.|\.rc\.|\.json$|\.yaml$|\.yml$|\.env/.test(p) ||
-    /(^|\/)(\.|config|configs?)(\/|\.)/i.test(rel) ||
-    /package\.json|tsconfig|eslint|prettier|vitest|jest|babel/.test(p) ||
-    /stub|mock|fixture|example/i.test(p); // Inclui stubs e mocks
+  contexto.isConfiguracao = /config|\.config\.|\.rc\.|\.json$|\.yaml$|\.yml$|\.env/.test(p) || /(^|\/)(\.|config|configs?)(\/|\.)/i.test(rel) || /package\.json|tsconfig|eslint|prettier|vitest|jest|babel/.test(p) || /stub|mock|fixture|example/i.test(p); // Inclui stubs e mocks
 
   // Detecta se é arquivo de infraestrutura (setup, main, index)
-  contexto.isInfrastructure =
-    /index\.|main\.|app\.|server\.|setup\.|bootstrap/.test(p) ||
-    /(client\.login|client\.connect|createApp|express\(\)|listen\(|server\.start)/.test(
-      conteudo,
-    ) ||
-    /export\s+default|module\.exports\s*=/.test(conteudo) ||
-    /(guardian|sentinela|verificador|hash|diff|baseline)/i.test(p) || // Guardian e verificação
-    /(monitor|watch|observer|scanner)/i.test(p); // Monitoring
+  contexto.isInfrastructure = /index\.|main\.|app\.|server\.|setup\.|bootstrap/.test(p) || /(client\.login|client\.connect|createApp|express\(\)|listen\(|server\.start)/.test(conteudo) || /export\s+default|module\.exports\s*=/.test(conteudo) || /(guardian|sentinela|verificador|hash|diff|baseline)/i.test(p) ||
+  // Guardian e verificação
+  /(monitor|watch|observer|scanner)/i.test(p); // Monitoring
 
   // Detecta frameworks por imports/requires
-  const importMatches =
-    conteudo.match(
-      /import.*from.*['"`]([^'"`]+)['"`]|require\(['"`]([^'"`]+)['"`]\)/g,
-    ) || [];
+  const importMatches = conteudo.match(/import.*from.*['"`]([^'"`]+)['"`]|require\(['"`]([^'"`]+)['"`]\)/g) || [];
   const allImports = importMatches.join(' ').toLowerCase();
 
   // Frameworks de bot
@@ -118,41 +104,20 @@ export function detectarContextoProjeto(
   }
 
   // Detecta por conteúdo específico se imports não cobrirem
-  if (
-    !contexto.isBot &&
-    /slash.*command|interaction\.|commandName|client\.on.*message/i.test(
-      conteudo,
-    )
-  ) {
+  if (!contexto.isBot && /slash.*command|interaction\.|commandName|client\.on.*message/i.test(conteudo)) {
     contexto.isBot = true;
   }
-
-  if (
-    !contexto.isCLI &&
-    /process\.argv|command.*line|\.option\(|\.command\(/i.test(conteudo)
-  ) {
+  if (!contexto.isCLI && /process\.argv|command.*line|\.option\(|\.command\(/i.test(conteudo)) {
     contexto.isCLI = true;
   }
 
   // Detecta se é arquivo de infraestrutura por conteúdo (NÃO é comando)
-  if (
-    /export\s+(interface|type|class.*\{)/i.test(conteudo) ||
-    /import.*types?.*from|export.*types?/i.test(conteudo) ||
-    /function\s+format|function\s+display|function\s+render/i.test(conteudo) ||
-    /console\.log|logger\.|\.write\(|\.render\(/i.test(conteudo)
-  ) {
+  if (/export\s+(interface|type|class.*\{)/i.test(conteudo) || /import.*types?.*from|export.*types?/i.test(conteudo) || /function\s+format|function\s+display|function\s+render/i.test(conteudo) || /console\.log|logger\.|\.write\(|\.render\(/i.test(conteudo)) {
     contexto.isInfrastructure = true;
   }
 
   // Detecta se é biblioteca por estrutura de exports
-  if (
-    /export\s+(class|function|const|interface|type)|module\.exports/.test(
-      conteudo,
-    ) &&
-    !contexto.isWebApp &&
-    !contexto.isBot &&
-    !contexto.isCLI
-  ) {
+  if (/export\s+(class|function|const|interface|type)|module\.exports/.test(conteudo) && !contexto.isWebApp && !contexto.isBot && !contexto.isCLI) {
     contexto.isLibrary = true;
   }
 
@@ -164,17 +129,10 @@ export function detectarContextoProjeto(
   // CLI paths - mais específico para evitar falsos positivos
   if (/(^|\/)(cli|commands?|comandos?)(\/|\.|-)|bin\//.test(rel)) {
     // Mas não se for apenas processamento, display, options, ou utilitários
-    if (
-      !/\/(processing|display|options|utils|helpers|types|interfaces)\//.test(
-        rel,
-      ) &&
-      !/\/(options|display|processing|filter|helper|util|type)\./.test(rel) &&
-      !/(options|processing|display|filter|helper|util|types?)[-.]/.test(p)
-    ) {
+    if (!/\/(processing|display|options|utils|helpers|types|interfaces)\//.test(rel) && !/\/(options|display|processing|filter|helper|util|type)\./.test(rel) && !/(options|processing|display|filter|helper|util|types?)[-.]/.test(p)) {
       contexto.isCLI = true;
     }
   }
-
   if (/(^|\/)src\/(pages|app|routes|components|views)/.test(rel)) {
     contexto.isWebApp = true;
   }
@@ -182,11 +140,10 @@ export function detectarContextoProjeto(
   // Detecta por package.json se disponível
   if (packageJson) {
     const deps = {
-      ...((packageJson.dependencies as Record<string, string>) || {}),
-      ...((packageJson.devDependencies as Record<string, string>) || {}),
+      ...(packageJson.dependencies as Record<string, string> || {}),
+      ...(packageJson.devDependencies as Record<string, string> || {})
     };
-
-    Object.keys(deps).forEach((dep) => {
+    Object.keys(deps).forEach(dep => {
       if (/discord\.js|eris|@discordjs/.test(dep)) {
         contexto.isBot = true;
         contexto.frameworks.push('discord.js');
@@ -208,7 +165,6 @@ export function detectarContextoProjeto(
   // Remove duplicatas
   contexto.frameworks = [...new Set(contexto.frameworks)];
   contexto.linguagens = [...new Set(contexto.linguagens)];
-
   return contexto;
 }
 
@@ -216,14 +172,9 @@ export function detectarContextoProjeto(
  * Verifica se um arquivo é relevante para um tipo específico de análise
  */
 
-export function isRelevanteParaAnalise(
-  contexto: ContextoProjeto,
-  tipoAnalise: 'comando' | 'web' | 'bot' | 'cli' | 'biblioteca',
-): boolean {
+export function isRelevanteParaAnalise(contexto: ContextoProjeto, tipoAnalise: 'comando' | 'web' | 'bot' | 'cli' | 'biblioteca'): boolean {
   // Nunca analise arquivos de teste, config ou infraestrutura para padrões específicos
-  if (contexto.isTest || contexto.isConfig || contexto.isInfrastructure)
-    return false;
-
+  if (contexto.isTest || contexto.isConfiguracao || contexto.isInfrastructure) return false;
   switch (tipoAnalise) {
     case 'comando':
     case 'bot':
@@ -246,24 +197,11 @@ export function isRelevanteParaAnalise(
 
 export function sugerirFrameworks(contexto: ContextoProjeto): string[] {
   const sugestoes: string[] = [];
-
-  if (
-    contexto.isBot &&
-    !contexto.frameworks.some(
-      (f: string) => f.includes('discord') || f.includes('telegraf'),
-    )
-  ) {
+  if (contexto.isBot && !contexto.frameworks.some((f: string) => f.includes('discord') || f.includes('telegraf'))) {
     sugestoes.push('Considere usar discord.js ou telegraf para bots');
   }
-
-  if (
-    contexto.isCLI &&
-    !contexto.frameworks.some(
-      (f: string) => f.includes('cli') || f.includes('commander'),
-    )
-  ) {
+  if (contexto.isCLI && !contexto.frameworks.some((f: string) => f.includes('cli') || f.includes('commander'))) {
     sugestoes.push('Considere usar commander.js ou yargs para CLI');
   }
-
   return sugestoes;
 }

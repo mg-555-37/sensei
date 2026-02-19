@@ -11,17 +11,12 @@ export interface ParserBabelFileExtra extends File {
     metadata?: unknown;
   };
 }
-
-export type ParserFunc = (
-  codigo: string,
-  plugins?: string[],
-) => File | ParserBabelFileExtra | null;
-
+export type ParserFunc = (codigo: string, plugins?: string[]) => File | ParserBabelFileExtra | null;
 export interface DecifrarSintaxeOpts {
   plugins?: string[];
   codigo?: string;
   relPath?: string;
-  fullPath?: string;
+  fullCaminho?: string;
   ignorarErros?: boolean;
   timeoutMs?: number;
 }

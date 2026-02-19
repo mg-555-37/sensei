@@ -11,32 +11,24 @@ import { XMLParser } from 'fast-xml-parser';
 // Parsers externos leves para outras linguagens
 import { parseDocument } from 'htmlparser2';
 import { createRequire } from 'module';
-
-import type {
-  DecifrarSintaxeOpts,
-  ParserBabelFileExtra as BabelFileExtra,
-  ParserFunc,
-  ParserOptions as PluginParserOptions,
-  ParserRawAst,
-} from '@';
+import type { DecifrarSintaxeOpts, ParserBabelFileExtra as BabelFileExtra, ParserFunc, ParserOptions as PluginParserOptions, ParserRawAst } from '@';
 
 // Contexto global para o arquivo atual durante parsing
-let currentParsingFile: string | undefined;
+let currentParsingArquivo: string | undefined;
 
 /**
  * Helper para setar o arquivo atual durante parsing
  */
 function setCurrentParsingFile(file: string | undefined) {
-  currentParsingFile = file;
+  currentParsingArquivo = file;
 }
 
 /**
  * Helper para obter o arquivo atual durante parsing
  */
 export function getCurrentParsingFile(): string {
-  return currentParsingFile || 'desconhecido';
+  return currentParsingArquivo || 'desconhecido';
 }
-
 const localRequire = createRequire(import.meta.url);
 
 // Mantemos a assinatura retornando BabelFile | null para não quebrar tipos externos, mas
@@ -45,26 +37,14 @@ const localRequire = createRequire(import.meta.url);
 
 function parseComBabel(codigo: string, plugins?: string[]): BabelFile | null {
   // Plugins padrão ampliados para cobrir padrões amplamente usados em node_modules
-  const defaultPlugins = [
-    'typescript',
-    'jsx',
-    'decorators-legacy',
-    // Suporte a import attributes/assertions modernos
-    'importAttributes',
-    'importAssertions',
-    // Class fields/methods private (comuns em libs modernas)
-    'classProperties',
-    'classPrivateProperties',
-    'classPrivateMethods',
-    'optionalChaining',
-    'nullishCoalescingOperator',
-    'topLevelAwait',
-  ];
+  const defaultPlugins = ['typescript', 'jsx', 'decorators-legacy',
+  // Suporte a import attributes/assertions modernos
+  'importAttributes', 'importAssertions',
+  // Class fields/methods private (comuns em libs modernas)
+  'classProperties', 'classPrivateProperties', 'classPrivateMethods', 'optionalChaining', 'nullishCoalescingOperator', 'topLevelAwait'];
   const options: ParserOptions = {
     sourceType: 'unambiguous',
-    plugins: (Array.isArray(plugins)
-      ? plugins
-      : defaultPlugins) as ParserOptions['plugins'],
+    plugins: (Array.isArray(plugins) ? plugins : defaultPlugins) as ParserOptions['plugins']
   };
   try {
     return babelParse(codigo, options);
@@ -74,7 +54,6 @@ function parseComBabel(codigo: string, plugins?: string[]): BabelFile | null {
     return null;
   }
 }
-
 function wrapMinimal(lang: string, rawAst: ParserRawAst): BabelFileExtra {
   return {
     type: 'File',
@@ -82,41 +61,36 @@ function wrapMinimal(lang: string, rawAst: ParserRawAst): BabelFileExtra {
       type: 'Program',
       body: [],
       sourceType: 'script',
-      directives: [],
+      directives: []
     },
     comments: [],
     tokens: [],
-    doutorExtra: { lang, rawAst },
+    doutorExtra: {
+      lang,
+      rawAst
+    }
   };
 }
-
 function parseComTypeScript(codigo: string, tsx = false) {
   try {
     // Lazy require para reduzir custo quando não necessário
     const ts: typeof import('typescript') = localRequire('typescript');
-    const sf = ts.createSourceFile(
-      tsx ? 'file.tsx' : 'file.ts',
-      codigo,
-      ts.ScriptTarget.Latest,
-      /*setParentNodes*/ false,
-      tsx ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
-    );
+    const sf = ts.createSourceFile(tsx ? 'file.tsx' : 'file.ts', codigo, ts.ScriptTarget.Latest, /*setParentNodes*/false, tsx ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
     // Retorna AST do TS como extra; suficiente para gerar sentinel no pipeline
     return wrapMinimal(tsx ? 'tsx-tsc' : 'ts-tsc', {
       kind: sf.kind,
-      statements: sf.statements?.length ?? 0,
+      statements: sf.statements?.length ?? 0
     });
   } catch (e) {
     logCore.erroTs((e as Error).message, getCurrentParsingFile());
     return null;
   }
 }
-
 function parseComXml(codigo: string) {
   try {
     const parser = new XMLParser({
       ignoreAttributes: false,
-      attributeNamePrefix: '@',
+      attributeNamePrefix: '@'
     });
     const ast = parser.parse(codigo);
     return wrapMinimal('xml', ast);
@@ -125,61 +99,45 @@ function parseComXml(codigo: string) {
     return null;
   }
 }
-
 function parseComPhp(codigo: string) {
   // Heurística simples para PHP: extrai classes, funções e namespaces
-  const classes = Array.from(codigo.matchAll(/\bclass\s+([A-Za-z0-9_]+)/g)).map(
-    (m) => m[1],
-  );
-  const functions = Array.from(
-    codigo.matchAll(/\bfunction\s+([A-Za-z0-9_]+)/g),
-  ).map((m) => m[1]);
-  const namespaces = Array.from(
-    codigo.matchAll(/\bnamespace\s+([A-Za-z0-9_\\]+)/g),
-  ).map((m) => m[1]);
-  log.debug(
-    `🐘 PHP pseudo-parse: ${classes.length} classes, ${functions.length} funções`,
-  );
-  return wrapMinimal('php', { classes, functions, namespaces });
+  const classes = Array.from(codigo.matchAll(/\bclass\s+([A-Za-z0-9_]+)/g)).map(m => m[1]);
+  const functions = Array.from(codigo.matchAll(/\bfunction\s+([A-Za-z0-9_]+)/g)).map(m => m[1]);
+  const namespaces = Array.from(codigo.matchAll(/\bnamespace\s+([A-Za-z0-9_\\]+)/g)).map(m => m[1]);
+  log.debug(`🐘 PHP pseudo-parse: ${classes.length} classes, ${functions.length} funções`);
+  return wrapMinimal('php', {
+    classes,
+    functions,
+    namespaces
+  });
 }
-
 function parseComPython(codigo: string) {
   // Heurística simples para Python: extrai classes e funções (def)
-  const classes = Array.from(codigo.matchAll(/^class\s+([A-Za-z0-9_]+)/gm)).map(
-    (m) => m[1],
-  );
-  const functions = Array.from(codigo.matchAll(/^def\s+([A-Za-z0-9_]+)/gm)).map(
-    (m) => m[1],
-  );
-  log.debug(
-    `🐍 Python pseudo-parse: ${classes.length} classes, ${functions.length} funções`,
-  );
-  return wrapMinimal('python', { classes, functions });
+  const classes = Array.from(codigo.matchAll(/^class\s+([A-Za-z0-9_]+)/gm)).map(m => m[1]);
+  const functions = Array.from(codigo.matchAll(/^def\s+([A-Za-z0-9_]+)/gm)).map(m => m[1]);
+  log.debug(`🐍 Python pseudo-parse: ${classes.length} classes, ${functions.length} funções`);
+  return wrapMinimal('python', {
+    classes,
+    functions
+  });
 }
-
 function parseComHtmlFunc(codigo: string) {
   try {
-    const dom = parseDocument(codigo, { xmlMode: false });
+    const dom = parseDocument(codigo, {
+      xmlMode: false
+    });
     return wrapMinimal('html', dom as unknown as ParserRawAst);
   } catch (e) {
     logCore.erroHtml((e as Error).message, getCurrentParsingFile());
     return null;
   }
 }
-
 function parseComVue(codigo: string) {
   try {
     // Extrair blocos do arquivo Vue
-    const templateMatch = codigo.match(
-      /<template\b[^>]*>([\s\S]*?)<\/template\b[^>]*>/i,
-    );
-    const scriptMatch = codigo.match(
-      /<script\b[^>]*>([\s\S]*?)<\/script\b[^>]*>/i,
-    );
-    const styleMatch = codigo.match(
-      /<style\b[^>]*>([\s\S]*?)<\/style\b[^>]*>/i,
-    );
-
+    const templateMatch = codigo.match(/<template\b[^>]*>([\s\S]*?)<\/template\b[^>]*>/i);
+    const scriptMatch = codigo.match(/<script\b[^>]*>([\s\S]*?)<\/script\b[^>]*>/i);
+    const styleMatch = codigo.match(/<style\b[^>]*>([\s\S]*?)<\/style\b[^>]*>/i);
     const template = templateMatch ? templateMatch[1].trim() : '';
     const script = scriptMatch ? scriptMatch[1].trim() : '';
     const style = styleMatch ? styleMatch[1].trim() : '';
@@ -190,7 +148,7 @@ function parseComVue(codigo: string) {
         babelParse(script, {
           sourceType: 'module',
           plugins: ['typescript', 'jsx'],
-          allowImportExportEverywhere: true,
+          allowImportExportEverywhere: true
         });
       } catch {
         // Fallback para JS se TS falhar
@@ -198,7 +156,7 @@ function parseComVue(codigo: string) {
           babelParse(script, {
             sourceType: 'module',
             plugins: ['jsx'],
-            allowImportExportEverywhere: true,
+            allowImportExportEverywhere: true
           });
         } catch {
           // Ignorar erros de parsing do script
@@ -209,7 +167,9 @@ function parseComVue(codigo: string) {
     // Analisar template como HTML se presente
     if (template) {
       try {
-        parseDocument(template, { xmlMode: false });
+        parseDocument(template, {
+          xmlMode: false
+        });
       } catch {
         // Ignorar erros de parsing do template
       }
@@ -218,12 +178,13 @@ function parseComVue(codigo: string) {
     // Analisar style como CSS se presente
     if (style) {
       try {
-        csstree.parse(style, { positions: false });
+        csstree.parse(style, {
+          positions: false
+        });
       } catch {
         // Ignorar erros de parsing do style
       }
     }
-
     return wrapMinimal('vue', {
       template: template ? 'present' : null,
       script: script ? 'present' : null,
@@ -233,54 +194,31 @@ function parseComVue(codigo: string) {
       hasStyle: !!style,
       templateContent: template,
       scriptContent: script,
-      styleContent: style,
+      styleContent: style
     });
   } catch (e) {
     logCore.erroHtml((e as Error).message, getCurrentParsingFile());
     return null;
   }
 }
-
 function parseComCss(codigo: string) {
   try {
-    const ast = csstree.parse(codigo, { positions: false });
+    const ast = csstree.parse(codigo, {
+      positions: false
+    });
     return wrapMinimal('css', ast);
   } catch (e) {
     logCore.erroCss((e as Error).message, getCurrentParsingFile());
     return null;
   }
 }
-
-export const PARSERS = new Map<string, ParserFunc>([
-  ['.js', parseComBabel],
-  ['.jsx', parseComBabel],
-  ['.ts', parseComBabel],
-  ['.tsx', parseComBabel],
-  ['.mjs', parseComBabel],
-  ['.cjs', parseComBabel],
-  // Evitamos .d.ts explicitamente: não há AST útil para nossas análises
-  ['.d.ts', () => null],
-  ['.xml', parseComXml],
-  ['.html', parseComHtmlFunc],
-  ['.htm', parseComHtmlFunc],
-  ['.vue', parseComVue],
-  ['.css', parseComCss],
-  ['.php', parseComPhp],
-  ['.py', parseComPython],
-]);
-
-export const EXTENSOES_SUPORTADAS = Array.from(PARSERS.keys()).filter(
-  (ext) => ext !== '.d.ts',
-);
-
-export async function decifrarSintaxe(
-  codigo: string,
-  ext: string,
-  opts: DecifrarSintaxeOpts = {},
-): Promise<BabelFile | null> {
+export const PARSERS = new Map<string, ParserFunc>([['.js', parseComBabel], ['.jsx', parseComBabel], ['.ts', parseComBabel], ['.tsx', parseComBabel], ['.mjs', parseComBabel], ['.cjs', parseComBabel],
+// Evitamos .d.ts explicitamente: não há AST útil para nossas análises
+['.d.ts', () => null], ['.xml', parseComXml], ['.html', parseComHtmlFunc], ['.htm', parseComHtmlFunc], ['.vue', parseComVue], ['.css', parseComCss], ['.php', parseComPhp], ['.py', parseComPython]]);
+export const EXTENSOES_SUPORTADAS = Array.from(PARSERS.keys()).filter(ext => ext !== '.d.ts');
+export async function decifrarSintaxe(codigo: string, ext: string, opts: DecifrarSintaxeOpts = {}): Promise<BabelFile | null> {
   // Setar arquivo atual para logs de erro
   setCurrentParsingFile(opts.relPath);
-
   const parser = PARSERS.get(ext);
   if (!parser) {
     logCore.nenhumParser(ext);
@@ -293,7 +231,7 @@ export async function decifrarSintaxe(
   if (ext === '.ts' || ext === '.tsx') {
     const p = opts.plugins;
     if (Array.isArray(p)) {
-      const lower = p.map((x) => String(x).toLowerCase());
+      const lower = p.map(x => String(x).toLowerCase());
       const hasTs = lower.includes('typescript');
       const hasFlow = lower.includes('flow');
       if (!hasTs || hasFlow) {
@@ -309,52 +247,25 @@ export async function decifrarSintaxe(
   }
 
   // Primeira tentativa com plugins padrão (ou fornecidos)
-  let parseResult;
+  let parseResultado;
   if (parser === parseComBabel) {
-    parseResult = parseComBabel(codigo, opts.plugins);
+    parseResultado = parseComBabel(codigo, opts.plugins);
   } else {
-    parseResult = parser(codigo, opts.plugins);
+    parseResultado = parser(codigo, opts.plugins);
   }
   // Fallbacks específicos para .js/.mjs: tentar Flow quando a primeira tentativa falhar
-  if (
-    parseResult == null &&
-    (ext === '.js' || ext === '.mjs' || ext === '.cjs')
-  ) {
+  if (parseResultado == null && (ext === '.js' || ext === '.mjs' || ext === '.cjs')) {
     try {
       // Heurística rápida: detecta uso de Flow
-      const pareceFlow =
-        /@flow\b/.test(codigo) || /\bimport\s+type\b/.test(codigo);
+      const pareceFlow = /@flow\b/.test(codigo) || /\bimport\s+type\b/.test(codigo);
       if (pareceFlow) {
-        const flowPlugins = [
-          'flow',
-          'jsx',
-          'decorators-legacy',
-          'importAttributes',
-          'importAssertions',
-          'classProperties',
-          'classPrivateProperties',
-          'classPrivateMethods',
-          'optionalChaining',
-          'nullishCoalescingOperator',
-          'topLevelAwait',
-        ];
-        parseResult = parseComBabel(codigo, flowPlugins);
+        const flowPlugins = ['flow', 'jsx', 'decorators-legacy', 'importAttributes', 'importAssertions', 'classProperties', 'classPrivateProperties', 'classPrivateMethods', 'optionalChaining', 'nullishCoalescingOperator', 'topLevelAwait'];
+        parseResultado = parseComBabel(codigo, flowPlugins);
       }
       // Se ainda nulo e não parece Flow, tenta um conjunto "JS moderno" sem TypeScript (para .js puros)
-      if (parseResult == null) {
-        const jsModernPlugins = [
-          'jsx',
-          'decorators-legacy',
-          'importAttributes',
-          'importAssertions',
-          'classProperties',
-          'classPrivateProperties',
-          'classPrivateMethods',
-          'optionalChaining',
-          'nullishCoalescingOperator',
-          'topLevelAwait',
-        ];
-        parseResult = parseComBabel(codigo, jsModernPlugins);
+      if (parseResultado == null) {
+        const jsModernPlugins = ['jsx', 'decorators-legacy', 'importAttributes', 'importAssertions', 'classProperties', 'classPrivateProperties', 'classPrivateMethods', 'optionalChaining', 'nullishCoalescingOperator', 'topLevelAwait'];
+        parseResultado = parseComBabel(codigo, jsModernPlugins);
       }
     } catch {
       // mantém null
@@ -362,7 +273,7 @@ export async function decifrarSintaxe(
   }
 
   // Fallback usando TypeScript compiler quando Babel falhar em .ts/.tsx
-  if (parseResult == null && (ext === '.ts' || ext === '.tsx')) {
+  if (parseResultado == null && (ext === '.ts' || ext === '.tsx')) {
     const tsx = ext === '.tsx';
     const tsParsed = parseComTypeScript(codigo, tsx);
     if (tsParsed) {
@@ -373,11 +284,7 @@ export async function decifrarSintaxe(
 
   // Caso especial: se plugins foram passados e o parser de .ts/.tsx retornou null,
   // força fallback para o compilador TS (cobre cenários de plugins conflitantes como 'flow').
-  if (
-    parseResult == null &&
-    opts.plugins &&
-    (ext === '.ts' || ext === '.tsx')
-  ) {
+  if (parseResultado == null && opts.plugins && (ext === '.ts' || ext === '.tsx')) {
     const tsx = ext === '.tsx';
     const tsParsed = parseComTypeScript(codigo, tsx);
     if (tsParsed) {
@@ -385,20 +292,16 @@ export async function decifrarSintaxe(
       return Promise.resolve(tsParsed as unknown as BabelFile);
     }
   }
-
   if (opts.timeoutMs) {
     return (async () => {
       let timer: NodeJS.Timeout | null = null;
       try {
-        const race = Promise.race([
-          Promise.resolve(parseResult),
-          new Promise<null>((resolve) => {
-            timer = setTimeout(() => {
-              logCore.timeoutParsing(opts.timeoutMs || 0, ext);
-              resolve(null);
-            }, opts.timeoutMs);
-          }),
-        ]);
+        const race = Promise.race([Promise.resolve(parseResultado), new Promise<null>(resolve => {
+          timer = setTimeout(() => {
+            logCore.timeoutParsing(opts.timeoutMs || 0, ext);
+            resolve(null);
+          }, opts.timeoutMs);
+        })]);
         return await race;
       } finally {
         if (timer) clearTimeout(timer);
@@ -409,9 +312,8 @@ export async function decifrarSintaxe(
 
   // Se ainda assim for null, normalize para null explícito
   setCurrentParsingFile(undefined);
-  return Promise.resolve(parseResult ?? null);
+  return Promise.resolve(parseResultado ?? null);
 }
-
 function initializePluginSystem() {
   const registry = getGlobalRegistry();
 
@@ -428,36 +330,27 @@ function initializePluginSystem() {
  * Mantém compatibilidade com sistema atual
  */
 
-export async function parseComPlugins(
-  codigo: string,
-  extensao: string,
-  opts?: PluginParserOptions,
-): Promise<BabelFile | null> {
+export async function parseComPlugins(codigo: string, extensao: string, opts?: PluginParserOptions): Promise<BabelFile | null> {
   try {
     initializePluginSystem();
-
     const registry = getGlobalRegistry();
     const plugin = await registry.getPluginForExtension(extensao);
-
     if (!plugin) {
       logCore.pluginNaoEncontrado(extensao);
       // Fallback para sistema atual usando a função exportada
       return await decifrarSintaxe(codigo, extensao, {
         plugins: opts?.plugins,
-        timeoutMs: opts?.timeoutMs,
+        timeoutMs: opts?.timeoutMs
       });
     }
-
     logCore.usandoPlugin(plugin.name, extensao);
-
     const pluginOpts: PluginParserOptions = {
       ...opts,
       pluginConfig: {
         ...opts?.pluginConfig,
-        extension: extensao,
-      },
+        extension: extensao
+      }
     };
-
     const result = await plugin.parse(codigo, pluginOpts);
     return result;
   } catch (error) {
@@ -465,7 +358,7 @@ export async function parseComPlugins(
     // Fallback para sistema atual em caso de erro
     return await decifrarSintaxe(codigo, extensao, {
       plugins: opts?.plugins,
-      timeoutMs: opts?.timeoutMs,
+      timeoutMs: opts?.timeoutMs
     });
   }
 }
@@ -483,17 +376,16 @@ export function getPluginStats(): {
     initializePluginSystem();
     const registry = getGlobalRegistry();
     const stats = registry.getStats();
-
     return {
       pluginsRegistrados: stats.pluginsRegistrados,
       extensoesSuportadas: stats.extensoesSuportadas,
-      sistemAtivojava: stats.pluginsRegistrados > 0,
+      sistemAtivojava: stats.pluginsRegistrados > 0
     };
   } catch {
     return {
       pluginsRegistrados: 0,
       extensoesSuportadas: 0,
-      sistemAtivojava: false,
+      sistemAtivojava: false
     };
   }
 }

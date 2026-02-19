@@ -5,37 +5,35 @@
  */
 
 import type { JsonComMetadados } from '@';
-
-export const JsonMessages = {
+export const JsonMensagens = {
   /* -------------------------- CAMPOS COMUNS -------------------------- */
   comum: {
     timestamp: {
       label: 'timestamp',
-      descricao: 'Data e hora da geração do relatório (ISO 8601)',
+      descricao: 'Data e hora da geração do relatório (ISO 8601)'
     },
     versao: {
       label: 'versao',
-      descricao: 'Versão do Doutor que gerou este relatório',
+      descricao: 'Versão do Doutor que gerou este relatório'
     },
     schemaVersion: {
       label: 'schemaVersion',
-      descricao: 'Versão do schema JSON (para compatibilidade backward)',
+      descricao: 'Versão do schema JSON (para compatibilidade backward)'
     },
     duracao: {
       label: 'duracaoMs',
-      descricao: 'Duração total da execução em milissegundos',
-    },
+      descricao: 'Duração total da execução em milissegundos'
+    }
   },
-
   /* -------------------------- DIAGNÓSTICO -------------------------- */
   diagnostico: {
     root: {
       label: 'diagnostico',
-      descricao: 'Resultado completo do diagnóstico do projeto',
+      descricao: 'Resultado completo do diagnóstico do projeto'
     },
     totalArquivos: {
       label: 'totalArquivos',
-      descricao: 'Número total de arquivos escaneados',
+      descricao: 'Número total de arquivos escaneados'
     },
     ocorrencias: {
       label: 'ocorrencias',
@@ -47,8 +45,8 @@ export const JsonMessages = {
         relPath: 'Caminho relativo do arquivo',
         linha: 'Linha onde ocorre o problema',
         coluna: 'Coluna onde ocorre o problema',
-        contexto: 'Contexto adicional (snippet de código)',
-      },
+        contexto: 'Contexto adicional (snippet de código)'
+      }
     },
     metricas: {
       label: 'metricas',
@@ -57,16 +55,16 @@ export const JsonMessages = {
         totalLinhas: 'Total de linhas de código analisadas',
         totalArquivos: 'Total de arquivos processados',
         arquivosComErro: 'Arquivos que falharam no parsing',
-        tempoTotal: 'Tempo total de processamento',
-      },
+        tempoTotal: 'Tempo total de processamento'
+      }
     },
     linguagens: {
       label: 'linguagens',
       descricao: 'Estatísticas de uso de linguagens no projeto',
       campos: {
         total: 'Total de arquivos de código',
-        extensoes: 'Mapa de extensão -> quantidade',
-      },
+        extensoes: 'Mapa de extensão -> quantidade'
+      }
     },
     parseErros: {
       label: 'parseErros',
@@ -74,16 +72,15 @@ export const JsonMessages = {
       campos: {
         total: 'Total de erros de parsing',
         porArquivo: 'Mapa de arquivo -> lista de erros',
-        agregado: 'Indica se houve agregação de erros',
-      },
-    },
+        agregado: 'Indica se houve agregação de erros'
+      }
+    }
   },
-
   /* -------------------------- ESTRUTURA / ARQUETIPOS -------------------------- */
   estrutura: {
     root: {
       label: 'estruturaIdentificada',
-      descricao: 'Identificação da estrutura e arquétipo do projeto',
+      descricao: 'Identificação da estrutura e arquétipo do projeto'
     },
     melhores: {
       label: 'melhores',
@@ -95,8 +92,8 @@ export const JsonMessages = {
         descricao: 'Descrição do arquétipo',
         matchedRequired: 'Arquivos obrigatórios encontrados',
         missingRequired: 'Arquivos obrigatórios ausentes',
-        matchedOptional: 'Arquivos opcionais encontrados',
-      },
+        matchedOptional: 'Arquivos opcionais encontrados'
+      }
     },
     baseline: {
       label: 'baseline',
@@ -105,8 +102,8 @@ export const JsonMessages = {
         arquetipo: 'Arquétipo identificado',
         confidence: 'Confiança quando salvo',
         timestamp: 'Data do snapshot',
-        arquivosRaiz: 'Lista de arquivos na raiz',
-      },
+        arquivosRaiz: 'Lista de arquivos na raiz'
+      }
     },
     drift: {
       label: 'drift',
@@ -115,16 +112,15 @@ export const JsonMessages = {
         alterouArquetipo: 'Se houve mudança de arquétipo',
         deltaConfidence: 'Variação percentual de confiança',
         arquivosRaizNovos: 'Novos arquivos na raiz',
-        arquivosRaizRemovidos: 'Arquivos removidos da raiz',
-      },
-    },
+        arquivosRaizRemovidos: 'Arquivos removidos da raiz'
+      }
+    }
   },
-
   /* -------------------------- GUARDIAN -------------------------- */
   guardian: {
     root: {
       label: 'guardian',
-      descricao: 'Verificação de integridade e proteção do código',
+      descricao: 'Verificação de integridade e proteção do código'
     },
     status: {
       label: 'status',
@@ -133,12 +129,12 @@ export const JsonMessages = {
         alteracoes: 'Alterações detectadas em arquivos protegidos',
         baseline: 'Baseline criado (primeira execução)',
         erro: 'Erro durante verificação',
-        naoExecutada: 'Guardian não foi executado',
-      },
+        naoExecutada: 'Guardian não foi executado'
+      }
     },
     totalArquivos: {
       label: 'totalArquivos',
-      descricao: 'Número de arquivos protegidos',
+      descricao: 'Número de arquivos protegidos'
     },
     alteracoes: {
       label: 'alteracoes',
@@ -147,16 +143,15 @@ export const JsonMessages = {
         arquivo: 'Caminho do arquivo modificado',
         hashAnterior: 'Hash SHA-256 anterior',
         hashAtual: 'Hash SHA-256 atual',
-        acao: 'Tipo de ação (modificado, adicionado, removido)',
-      },
-    },
+        acao: 'Tipo de ação (modificado, adicionado, removido)'
+      }
+    }
   },
-
   /* -------------------------- PODA -------------------------- */
   poda: {
     root: {
       label: 'poda',
-      descricao: 'Relatório de arquivos/diretórios marcados para remoção',
+      descricao: 'Relatório de arquivos/diretórios marcados para remoção'
     },
     pendencias: {
       label: 'pendencias',
@@ -165,12 +160,12 @@ export const JsonMessages = {
         caminho: 'Caminho completo',
         tipo: 'arquivo ou diretorio',
         motivoOriginal: 'Razão da marcação',
-        timestamp: 'Data da marcação',
-      },
+        timestamp: 'Data da marcação'
+      }
     },
     reativar: {
       label: 'listaReativar',
-      descricao: 'Lista de itens marcados para reativação',
+      descricao: 'Lista de itens marcados para reativação'
     },
     historico: {
       label: 'historico',
@@ -179,16 +174,15 @@ export const JsonMessages = {
         acao: 'Tipo de ação (remover, reativar, pendente)',
         caminho: 'Caminho afetado',
         timestamp: 'Data da ação',
-        usuario: 'Usuário que executou',
-      },
-    },
+        usuario: 'Usuário que executou'
+      }
+    }
   },
-
   /* -------------------------- REESTRUTURAÇÃO -------------------------- */
   reestruturar: {
     root: {
       label: 'reestruturacao',
-      descricao: 'Plano de reestruturação do projeto',
+      descricao: 'Plano de reestruturação do projeto'
     },
     movimentos: {
       label: 'movimentos',
@@ -199,8 +193,8 @@ export const JsonMessages = {
         destino: 'Caminho de destino',
         razao: 'Razão do movimento',
         status: 'Status (zona-verde, bloqueado, pendente)',
-        dependencias: 'Arquivos dependentes afetados',
-      },
+        dependencias: 'Arquivos dependentes afetados'
+      }
     },
     conflitos: {
       label: 'conflitos',
@@ -209,8 +203,8 @@ export const JsonMessages = {
         tipo: 'Tipo de conflito',
         arquivos: 'Arquivos envolvidos',
         descricao: 'Descrição do conflito',
-        resolucaoSugerida: 'Como resolver',
-      },
+        resolucaoSugerida: 'Como resolver'
+      }
     },
     resumo: {
       label: 'resumo',
@@ -219,28 +213,27 @@ export const JsonMessages = {
         total: 'Total de movimentos',
         zonaVerde: 'Movimentos seguros',
         bloqueados: 'Movimentos bloqueados',
-        impactoEstimado: 'Número de arquivos afetados',
-      },
-    },
+        impactoEstimado: 'Número de arquivos afetados'
+      }
+    }
   },
-
   /* -------------------------- FILTRO INTELIGENTE -------------------------- */
   filtroInteligente: {
     root: {
       label: 'relatorioResumo',
-      descricao: 'Relatório filtrado com problemas priorizados',
+      descricao: 'Relatório filtrado com problemas priorizados'
     },
     problemasCriticos: {
       label: 'problemasCriticos',
-      descricao: 'Problemas de severidade crítica (segurança, dados)',
+      descricao: 'Problemas de severidade crítica (segurança, dados)'
     },
     problemasAltos: {
       label: 'problemasAltos',
-      descricao: 'Problemas de alta prioridade (bugs, código frágil)',
+      descricao: 'Problemas de alta prioridade (bugs, código frágil)'
     },
     problemasOutros: {
       label: 'problemasOutros',
-      descricao: 'Demais problemas (baixa/média prioridade)',
+      descricao: 'Demais problemas (baixa/média prioridade)'
     },
     estatisticas: {
       label: 'estatisticas',
@@ -249,29 +242,24 @@ export const JsonMessages = {
         totalOcorrencias: 'Total de ocorrências processadas',
         arquivosAfetados: 'Número de arquivos únicos afetados',
         problemasPrioritarios: 'Problemas críticos + altos',
-        problemasAgrupados: 'Número de grupos criados',
-      },
-    },
-  },
+        problemasAgrupados: 'Número de grupos criados'
+      }
+    }
+  }
 };
 
 /**
  * Envolve dados JSON com metadados explicativos
  */
-export function wrapComMetadados<T>(
-  data: T,
-  schema: string,
-  versao: string,
-  descricao: string,
-): JsonComMetadados<T> {
+export function wrapComMetadados<T>(data: T, schema: string, versao: string, descricao: string): JsonComMetadados<T> {
   return {
     _metadata: {
       schema,
       versao,
       geradoEm: new Date().toISOString(),
-      descricao,
+      descricao
     },
-    dados: data,
+    dados: data
   };
 }
 
@@ -281,8 +269,7 @@ export function wrapComMetadados<T>(
 export function getDescricaoCampo(caminho: string): string {
   const parts = caminho.split('.');
   // Tipo seguro para navegação no objeto de mensagens
-  let current: unknown = JsonMessages;
-
+  let current: unknown = JsonMensagens;
   for (const part of parts) {
     if (typeof current === 'object' && current !== null && part in current) {
       current = (current as Record<string, unknown>)[part];
@@ -292,14 +279,12 @@ export function getDescricaoCampo(caminho: string): string {
   }
 
   // Type guard para verificar se tem descrição
-  if (
-    typeof current === 'object' &&
-    current !== null &&
-    'descricao' in current &&
-    typeof (current as { descricao: unknown }).descricao === 'string'
-  ) {
-    return (current as { descricao: string }).descricao;
+  if (typeof current === 'object' && current !== null && 'descricao' in current && typeof (current as {
+    descricao: unknown;
+  }).descricao === 'string') {
+    return (current as {
+      descricao: string;
+    }).descricao;
   }
-
   return `Campo: ${caminho}`;
 }

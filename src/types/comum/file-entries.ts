@@ -2,12 +2,11 @@
 
 import type { NodePath } from '@babel/traverse';
 import type { Node } from '@babel/types';
-
 export type OrigemArquivo = 'local' | 'remoto' | 'gerado';
 
 // Versão base - compatível com núcleo
 export interface FileEntry {
-  fullPath: string;
+  fullCaminho: string;
   relPath: string;
   content: string | null;
   origem?: OrigemArquivo;
@@ -28,7 +27,6 @@ export interface FileEntryWithBabelAst extends FileEntry {
 export interface FileEntryWithGenericAst extends FileEntry {
   ast: object | null | undefined;
 }
-
 export type FileMap = Record<string, FileEntry>;
 export type FileMapWithAst = Record<string, FileEntryWithAst>;
 export type FileMapWithBabelAst = Record<string, FileEntryWithBabelAst>;

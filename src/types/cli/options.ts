@@ -6,13 +6,7 @@
 /**
  * Tipo de linguagem/plataforma detectada (diferente de TipoProjeto que é arquitetura)
  */
-export type TipoLinguagemProjeto =
-  | 'typescript'
-  | 'nodejs'
-  | 'python'
-  | 'java'
-  | 'dotnet'
-  | 'generico';
+export type TipoLinguagemProjeto = 'typescript' | 'nodejs' | 'python' | 'java' | 'dotnet' | 'generico';
 
 /**
  * Filtros processados após normalização
@@ -22,7 +16,7 @@ export interface FiltrosProcessados {
   exclude?: string[];
   includeGroups: string[][];
   includeFlat: string[];
-  excludePatterns: string[];
+  excludePadroes: string[];
   incluiNodeModules?: boolean;
   tipoProjeto?: TipoLinguagemProjeto;
 }
@@ -178,7 +172,7 @@ export interface FlagsBrutas {
   dryRun?: boolean;
   showFixes?: boolean;
   autoFix?: boolean;
-  autoFixMode?: string;
+  autoCorrecaoMode?: string;
   autoFixConservative?: boolean;
 
   // Guardian
@@ -188,7 +182,7 @@ export interface FlagsBrutas {
   guardianBaseline?: boolean;
 
   // Verbosidade
-  logLevel?: string;
+  logNivel?: string;
   quiet?: boolean;
   verbose?: boolean;
   silent?: boolean;
@@ -203,8 +197,8 @@ export interface FlagsBrutas {
   debug?: boolean;
   dev?: boolean;
 } /**
- * Resultado de validação de flags
- */
+  * Resultado de validação de flags
+  */
 export interface ResultadoValidacao {
   valid: boolean;
   errors: string[];

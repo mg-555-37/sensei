@@ -4,7 +4,6 @@
  */
 
 import type { Analista, Ocorrencia } from '@';
-
 import { filtrarOcorrenciasSuprimidas } from './suppressao.js';
 
 /**
@@ -12,41 +11,24 @@ import { filtrarOcorrenciasSuprimidas } from './suppressao.js';
  */
 export function comSupressaoInline(analista: Analista): Analista {
   const aplicarOriginal = analista.aplicar;
-
   return {
     ...analista,
-    aplicar: (src, relPath, ast, fullPath, contexto) => {
+    aplicar: (src, relPath, ast, fullCaminho, contexto) => {
       // Executa o analista original
-      const resultado = aplicarOriginal(src, relPath, ast, fullPath, contexto);
+      const resultado = aplicarOriginal(src, relPath, ast, fullCaminho, contexto);
 
       // Se o resultado é uma Promise, aguarda antes de filtrar
       if (resultado instanceof Promise) {
-        return resultado.then((ocorrencias) => {
-          const arr = !ocorrencias
-            ? []
-            : Array.isArray(ocorrencias)
-              ? ocorrencias
-              : [ocorrencias];
-          return filtrarOcorrenciasSuprimidas(
-            arr as Ocorrencia[],
-            analista.nome,
-            src,
-          );
+        return resultado.then(ocorrencias => {
+          const arr = !ocorrencias ? [] : Array.isArray(ocorrencias) ? ocorrencias : [ocorrencias];
+          return filtrarOcorrenciasSuprimidas(arr as Ocorrencia[], analista.nome, src);
         });
       }
 
       // Filtra ocorrências baseado em supressões inline
-      const arr = !resultado
-        ? []
-        : Array.isArray(resultado)
-          ? resultado
-          : [resultado];
-      return filtrarOcorrenciasSuprimidas(
-        arr as Ocorrencia[],
-        analista.nome,
-        src,
-      );
-    },
+      const arr = !resultado ? [] : Array.isArray(resultado) ? resultado : [resultado];
+      return filtrarOcorrenciasSuprimidas(arr as Ocorrencia[], analista.nome, src);
+    }
   };
 }
 

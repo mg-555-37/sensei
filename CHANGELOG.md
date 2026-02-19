@@ -10,6 +10,36 @@ Todas as mudanças notáveis deste repositório serão documentadas aqui.
 O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
 e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [0.3.9] - 2026-02-19
+
+### Adicionado
+
+- **Gerenciamento de Nomes de Variáveis**:
+  - Novo comando `names`: Varre o projeto e extrai nomes de variáveis para mapeamento em `names/name.txt`.
+  - Novo comando `rename`: Aplica renomeações de variáveis em massa baseadas no arquivo de mapeamento.
+  - Script automatizado para sugestão de traduções (Português) para nomes de variáveis.
+
+### Alterado
+
+- **Segurança de Tipagem**:
+  - Refinamento massivo de tipos `any` e `unknown` em todo o core e CLI via `fix-types`.
+  - Melhoria na inferência de tipos em callbacks assíncronos e interfaces de plugins.
+- **Robustez do Renomeador**:
+  - Implementação de lista de nomes protegidos para evitar renomeação acidental de propriedades nativas (Node.js/JS).
+  - Ajuste no gerador de código para evitar erros de sintaxe em casts do TypeScript.
+
+### Corrigido
+
+- **Erros de Compilação**: Correção de erros de sintaxe gerados pelo Babel em `analista-html.ts`, `detector-markdown.ts` e `processamento-diagnostico.ts`.
+- **CLI**: Resolução do erro `ERR_INVALID_MODULE_SPECIFIER` na execução global do pacote via ESM loader.
+
+## [0.3.8] - 2026-02-18
+
+### Adicionado
+
+- **Manutenção**: Documentação e CHANGELOG atualizados para refletir o estado real do projeto.
+- **Refatoração**: Pequenas melhorias e correções de bugs.
+
 ## [0.3.6] - 2026-01-23
 
 ### Adicionado

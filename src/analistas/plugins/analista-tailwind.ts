@@ -1,47 +1,31 @@
 // SPDX-License-Identifier: MIT
-import {
-  AnalystOrigins,
-  AnalystTypes,
-  SeverityLevels,
-  TailwindMessages,
-} from '@core/messages/core/plugin-messages.js';
+import { AnalystOrigens, AnalystTipos, SeverityNiveis, TailwindMensagens } from '@core/messages/core/plugin-messages.js';
 import { createLineLookup } from '@shared/helpers/line-lookup.js';
-
 import { criarAnalista, criarOcorrencia } from '@';
-
 const disableEnv = process.env.DOUTOR_DISABLE_PLUGIN_TAILWIND === '1';
-
 type Msg = ReturnType<typeof criarOcorrencia>;
-
-type ClassBlock = { text: string; line: number };
-
-function extractBalancedBraces(
-  src: string,
-  braceStartIndex: number,
-  maxLen = 8000,
-): string | null {
+type ClassBlock = {
+  text: string;
+  line: number;
+};
+function extractBalancedBraces(src: string, braceStartIndex: number, maxLen = 8000): string | null {
   // braceStartIndex deve apontar para '{'
   if (braceStartIndex < 0 || braceStartIndex >= src.length) return null;
   if (src[braceStartIndex] !== '{') return null;
-
   let i = braceStartIndex + 1;
   let depth = 1;
-
   let inSingle = false;
   let inDouble = false;
   let inBacktick = false;
   let escaped = false;
-
-  const endLimit = Math.min(src.length, braceStartIndex + maxLen);
-  while (i < endLimit) {
+  const endLimite = Math.min(src.length, braceStartIndex + maxLen);
+  while (i < endLimite) {
     const ch = src[i];
-
     if (escaped) {
       escaped = false;
       i++;
       continue;
     }
-
     if (ch === '\\') {
       // escape dentro de strings
       if (inSingle || inDouble || inBacktick) {
@@ -50,7 +34,6 @@ function extractBalancedBraces(
       i++;
       continue;
     }
-
     if (inSingle) {
       if (ch === "'") inSingle = false;
       i++;
@@ -68,7 +51,6 @@ function extractBalancedBraces(
       i++;
       continue;
     }
-
     if (ch === "'") {
       inSingle = true;
       i++;
@@ -84,40 +66,28 @@ function extractBalancedBraces(
       i++;
       continue;
     }
-
-    if (ch === '{') depth++;
-    else if (ch === '}') depth--;
-
+    if (ch === '{') depth++;else if (ch === '}') depth--;
     if (depth === 0) {
       return src.slice(braceStartIndex + 1, i);
     }
-
     i++;
   }
-
   return null;
 }
-
 function sanitizeTemplateLiteralText(text: string): string {
   // Remove interpolações `${...}` para manter apenas a parte estática.
   return text.replace(/\$\{[\s\S]*?\}/g, ' ');
 }
-
 function normalizeClassText(text: string): string {
-  return String(text || '')
-    .replace(/\s+/g, ' ')
-    .trim();
+  return String(text || '').replace(/\s+/g, ' ').trim();
 }
-
 function isTernaryExpressionText(text: string): boolean {
   // Heurística: se há um '?' e ':' no trecho do atributo, trate como branches exclusivas.
   // Isso reduz falsos positivos de conflito entre classes mutuamente exclusivas.
   return /\?/.test(text) && /:/.test(text);
 }
-
 function extractStringLiterals(text: string): string[] {
   const out: string[] = [];
-
   for (const m of text.matchAll(/"([^"\\\n]|\\.)*"/g)) {
     out.push((m[0] ?? '').slice(1, -1));
   }
@@ -127,15 +97,11 @@ function extractStringLiterals(text: string): string[] {
   for (const m of text.matchAll(/`([^`]*)`/g)) {
     out.push(sanitizeTemplateLiteralText((m[1] ?? '').toString()));
   }
-
   return out;
 }
-
 function extractClassBlocks(src: string): ClassBlock[] {
   const blocks: ClassBlock[] = [];
-
   const lineOf = createLineLookup(src).lineAt;
-
   const seen = new Set<string>();
   const pushBlock = (text: string, line: number) => {
     const normalized = normalizeClassText(text);
@@ -143,7 +109,10 @@ function extractClassBlocks(src: string): ClassBlock[] {
     const key = `${line}|${normalized}`;
     if (seen.has(key)) return;
     seen.add(key);
-    blocks.push({ text: normalized, line });
+    blocks.push({
+      text: normalized,
+      line
+    });
   };
 
   // HTML/JSX: class="..." / className="..." (string literal)
@@ -152,9 +121,7 @@ function extractClassBlocks(src: string): ClassBlock[] {
   }
 
   // JSX: className={"..."} / className={'...'}
-  for (const m of src.matchAll(
-    /\bclass(Name)?\s*=\s*\{\s*(["'])([^"']*)\2\s*\}/gi,
-  )) {
+  for (const m of src.matchAll(/\bclass(Name)?\s*=\s*\{\s*(["'])([^"']*)\2\s*\}/gi)) {
     pushBlock(m[3] ?? '', lineOf(m.index));
   }
 
@@ -176,15 +143,11 @@ function extractClassBlocks(src: string): ClassBlock[] {
     const braceIdx = idx + (m[0]?.length ?? 0) - 1;
     const expr = extractBalancedBraces(src, braceIdx);
     if (!expr) continue;
-
     const line = lineOf(idx);
-    const literals = extractStringLiterals(expr)
-      .map((s) => s.trim())
-      .filter(Boolean);
+    const literals = extractStringLiterals(expr).map(s => s.trim()).filter(Boolean);
     if (!literals.length) continue;
-
     if (isTernaryExpressionText(expr)) {
-      literals.forEach((s) => pushBlock(s, line));
+      literals.forEach(s => pushBlock(s, line));
       continue;
     }
     pushBlock(literals.join(' '), line);
@@ -197,15 +160,11 @@ function extractClassBlocks(src: string): ClassBlock[] {
     const braceIdx = idx + (m[0]?.length ?? 0) - 1;
     const expr = extractBalancedBraces(src, braceIdx);
     if (!expr) continue;
-
     const line = lineOf(idx);
-    const literals = extractStringLiterals(expr)
-      .map((s) => s.trim())
-      .filter(Boolean);
+    const literals = extractStringLiterals(expr).map(s => s.trim()).filter(Boolean);
     if (!literals.length) continue;
-
     if (isTernaryExpressionText(expr)) {
-      literals.forEach((s) => pushBlock(s, line));
+      literals.forEach(s => pushBlock(s, line));
       continue;
     }
     pushBlock(literals.join(' '), line);
@@ -213,51 +172,58 @@ function extractClassBlocks(src: string): ClassBlock[] {
 
   // JSX/TS: helpers comuns (clsx/cn/twMerge/classNames/classnames)
   // Heurística simples (sem parser): extrai literais de string dentro da chamada.
-  for (const m of src.matchAll(
-    /\b(?:clsx|cn|twMerge|classNames|classnames)\s*\(([^)]*)\)/g,
-  )) {
+  for (const m of src.matchAll(/\b(?:clsx|cn|twMerge|classNames|classnames)\s*\(([^)]*)\)/g)) {
     const args = m[1] ?? '';
-    const literals = extractStringLiterals(args)
-      .map((s) => s.trim())
-      .filter(Boolean);
+    const literals = extractStringLiterals(args).map(s => s.trim()).filter(Boolean);
     if (!literals.length) continue;
     pushBlock(literals.join(' '), lineOf(m.index));
   }
-
   return blocks;
 }
-
 function hasTailwindTokens(src: string): boolean {
   const blocks = extractClassBlocks(src);
   if (!blocks.length) return false;
-
-  const tokenRe =
-    /\b(?:bg-|text-|m[trblxy]?-|p[trblxy]?-|flex|grid|gap-|space-|rounded|shadow|justify-|items-|w-|h-|min-w-|max-w-|min-h-|max-h-|inset-|top-|left-|right-|bottom-|z-|overflow-|cursor-|select-|border|ring|opacity-|font-|leading-|tracking-|transition|duration-|ease-|animate-|underline|no-underline|sr-only|not-sr-only|container)\S*/i;
-  return blocks.some((b) => tokenRe.test(b.text));
+  const tokenRe = /\b(?:bg-|text-|m[trblxy]?-|p[trblxy]?-|flex|grid|gap-|space-|rounded|shadow|justify-|items-|w-|h-|min-w-|max-w-|min-h-|max-h-|inset-|top-|left-|right-|bottom-|z-|overflow-|cursor-|select-|border|ring|opacity-|font-|leading-|tracking-|transition|duration-|ease-|animate-|underline|no-underline|sr-only|not-sr-only|container)\S*/i;
+  return blocks.some(b => tokenRe.test(b.text));
 }
-
-function extractClasses(src: string): { token: string; line: number }[] {
-  const results: { token: string; line: number }[] = [];
+function extractClasses(src: string): {
+  token: string;
+  line: number;
+}[] {
+  const results: {
+    token: string;
+    line: number;
+  }[] = [];
   for (const block of extractClassBlocks(src)) {
     const classes = block.text.split(/\s+/).filter(Boolean);
-    classes.forEach((token) => results.push({ token, line: block.line }));
+    classes.forEach(token => results.push({
+      token,
+      line: block.line
+    }));
   }
   return results;
 }
-
-function splitVariants(token: string): { variants: string; base: string } {
+function splitVariants(token: string): {
+  variants: string;
+  base: string;
+} {
   const parts = token.split(':').filter(Boolean);
-  if (parts.length <= 1) return { variants: '', base: token };
+  if (parts.length <= 1) return {
+    variants: '',
+    base: token
+  };
   return {
     variants: parts.slice(0, -1).join(':'),
-    base: parts[parts.length - 1],
+    base: parts[parts.length - 1]
   };
 }
-
 function propertyKey(token: string): string | null {
   // Respeita variantes (sm:, md:, dark:, hover:, etc.): conflitos só contam
   // dentro do mesmo "contexto" de variantes.
-  const { variants, base } = splitVariants(token);
+  const {
+    variants,
+    base
+  } = splitVariants(token);
 
   // ícones/fontawesome ou tokens livres não são tratados como conflito
   if (/^(fa-|icon-)/.test(base)) return null;
@@ -267,18 +233,15 @@ function propertyKey(token: string): string | null {
   if (padMatch) return `${variants}|padding:${padMatch[1]}`;
   const marMatch = /^(m[trblxy]?)(?:-|\[)/.exec(base);
   if (marMatch) return `${variants}|margin:${marMatch[1]}`;
-
   const gapMatch = /^(gap(?:-[xy])?)(?:-|\[)/.exec(base);
   if (gapMatch) return `${variants}|gap:${gapMatch[1]}`;
   if (/^space-[xy]/.test(base)) return `${variants}|space`;
 
   // display
-  if (/^(block|inline-block|inline|flex|grid|hidden)$/.test(base))
-    return `${variants}|display`;
+  if (/^(block|inline-block|inline|flex|grid|hidden)$/.test(base)) return `${variants}|display`;
 
   // flex direction
-  if (/^flex-(row|col)(-reverse)?$/.test(base))
-    return `${variants}|flex-direction`;
+  if (/^flex-(row|col)(-reverse)?$/.test(base)) return `${variants}|flex-direction`;
 
   // align/justify
   if (/^justify-/.test(base)) return `${variants}|justify`;
@@ -292,42 +255,47 @@ function propertyKey(token: string): string | null {
 
   // background + text (separa tamanho vs cor para reduzir ruído)
   if (/^bg-(?!opacity-)/.test(base)) return `${variants}|bg-color`;
-  if (/^text-(xs|sm|base|lg|xl|\d+xl)$/.test(base))
-    return `${variants}|text-size`;
-  if (/^text-(black|white|transparent|current)$/.test(base))
-    return `${variants}|text-color`;
+  if (/^text-(xs|sm|base|lg|xl|\d+xl)$/.test(base)) return `${variants}|text-size`;
+  if (/^text-(black|white|transparent|current)$/.test(base)) return `${variants}|text-color`;
   if (/^text-[a-z]+-\d{2,3}$/.test(base)) return `${variants}|text-color`;
-
-  const groups: { re: RegExp; key: string }[] = [
-    { re: /^w(?:-|\[)/, key: 'width' },
-    { re: /^h(?:-|\[)/, key: 'height' },
-    { re: /^min-w(?:-|\[)/, key: 'min-w' },
-    { re: /^max-w(?:-|\[)/, key: 'max-w' },
-    { re: /^min-h(?:-|\[)/, key: 'min-h' },
-    { re: /^max-h(?:-|\[)/, key: 'max-h' },
-    { re: /^(top|left|right|bottom)(?:-|\[)/, key: 'position' },
-  ];
-
-  const found = groups.find((g) => g.re.test(base));
+  const groups: {
+    re: RegExp;
+    key: string;
+  }[] = [{
+    re: /^w(?:-|\[)/,
+    key: 'width'
+  }, {
+    re: /^h(?:-|\[)/,
+    key: 'height'
+  }, {
+    re: /^min-w(?:-|\[)/,
+    key: 'min-w'
+  }, {
+    re: /^max-w(?:-|\[)/,
+    key: 'max-w'
+  }, {
+    re: /^min-h(?:-|\[)/,
+    key: 'min-h'
+  }, {
+    re: /^max-h(?:-|\[)/,
+    key: 'max-h'
+  }, {
+    re: /^(top|left|right|bottom)(?:-|\[)/,
+    key: 'position'
+  }];
+  const found = groups.find(g => g.re.test(base));
   return found ? `${variants}|${found.key}` : null;
 }
-
-function warn(
-  message: string,
-  relPath: string,
-  line?: number,
-  nivel: (typeof SeverityLevels)[keyof typeof SeverityLevels] = SeverityLevels.warning,
-): Msg {
+function warn(message: string, relPath: string, line?: number, nivel: (typeof SeverityNiveis)[keyof typeof SeverityNiveis] = SeverityNiveis.warning): Msg {
   return criarOcorrencia({
     relPath,
     mensagem: message,
     linha: line,
     nivel,
-    origem: AnalystOrigins.tailwind,
-    tipo: AnalystTypes.tailwind,
+    origem: AnalystOrigens.tailwind,
+    tipo: AnalystTipos.tailwind
   });
 }
-
 function collectTailwindIssues(src: string, relPath: string): Msg[] {
   const ocorrencias: Msg[] = [];
   // Importante: conflitos devem ser detectados por bloco de classes
@@ -336,7 +304,6 @@ function collectTailwindIssues(src: string, relPath: string): Msg[] {
   for (const block of blocks) {
     const tokens = (block.text || '').split(/\s+/).filter(Boolean);
     if (!tokens.length) continue;
-
     const line = block.line;
     const seen: Record<string, string[]> = {};
     for (const token of tokens) {
@@ -345,37 +312,22 @@ function collectTailwindIssues(src: string, relPath: string): Msg[] {
       if (!seen[key]) seen[key] = [];
       seen[key].push(token);
     }
-
     for (const [key, list] of Object.entries(seen)) {
       const uniqTokens = [...new Set(list)];
 
       // Detect duplicated exact tokens within same block (redundant classes)
       const repeats = list.filter((t, i) => list.indexOf(t) !== i);
       for (const r of [...new Set(repeats)]) {
-        ocorrencias.push(
-          warn(TailwindMessages.repeatedClass(r), relPath, line),
-        );
+        ocorrencias.push(warn(TailwindMensagens.repeatedClass(r), relPath, line));
       }
-
       if (uniqTokens.length > 1) {
         // Mensagem: mostra a chave sem o prefixo de variantes para não poluir,
         // mas mantém as classes originais nos exemplos.
-        const normalizedKey = key.includes('|')
-          ? key.split('|').slice(1).join('|')
-          : key;
-        ocorrencias.push(
-          warn(
-            TailwindMessages.conflictingClasses(
-              normalizedKey,
-              uniqTokens.slice(0, 4),
-            ),
-            relPath,
-            line,
-          ),
-        );
+        const normalizedChave = key.includes('|') ? key.split('|').slice(1).join('|') : key;
+        ocorrencias.push(warn(TailwindMensagens.conflictingClasses(normalizedChave, uniqTokens.slice(0, 4)), relPath, line));
 
         // Detect variant conflicts for same property across multiple variants
-        const propSuffix = normalizedKey;
+        const propSuffix = normalizedChave;
         const variantsSet = new Set<string>();
         for (const k of Object.keys(seen)) {
           const parts = k.split('|');
@@ -384,17 +336,7 @@ function collectTailwindIssues(src: string, relPath: string): Msg[] {
           if (propPart === propSuffix) variantsSet.add(varPart || 'base');
         }
         if (variantsSet.size > 1) {
-          ocorrencias.push(
-            warn(
-              TailwindMessages.variantConflict(
-                propSuffix,
-                Array.from(variantsSet),
-              ),
-              relPath,
-              line,
-              SeverityLevels.suggestion,
-            ),
-          );
+          ocorrencias.push(warn(TailwindMensagens.variantConflict(propSuffix, Array.from(variantsSet)), relPath, line, SeverityNiveis.suggestion));
         }
       }
     }
@@ -410,74 +352,53 @@ function collectTailwindIssues(src: string, relPath: string): Msg[] {
     }
     for (const [prop, vset] of Object.entries(propVariants)) {
       if (vset.size > 1) {
-        ocorrencias.push(
-          warn(
-            TailwindMessages.variantConflict(prop, Array.from(vset)),
-            relPath,
-            line,
-            SeverityLevels.suggestion,
-          ),
-        );
+        ocorrencias.push(warn(TailwindMensagens.variantConflict(prop, Array.from(vset)), relPath, line, SeverityNiveis.suggestion));
       }
     }
   }
 
   // Arbitrary values: sinalizar para revisão
-  const safeArbitrary =
-    /(var\()|(rgb\()|(hsl\()|(calc\()|url\(|linear-gradient|conic-gradient|radial-gradient|\d+(px|rem|em|%|vh|vw|ms|s|deg|fr)?\]|\d+\/\d+|\[--|^\d+\/\d+|\d+px|\d+rem|\d+em|\d+%|\d+deg|\d+fr/i;
-
+  const safeArbitrary = /(var\()|(rgb\()|(hsl\()|(calc\()|url\(|linear-gradient|conic-gradient|radial-gradient|\d+(px|rem|em|%|vh|vw|ms|s|deg|fr)?\]|\d+\/\d+|\[--|^\d+\/\d+|\d+px|\d+rem|\d+em|\d+%|\d+deg|\d+fr/i;
   const allTokens = extractClasses(src);
-  allTokens
-    .filter(({ token }) => /\[.*\]/.test(token))
-    .forEach(({ token, line }) => {
-      const hasDangerousUrl =
-        /\[.*url\(.+\).*\]/i.test(token) &&
-        /javascript:|data:text\/html/i.test(token);
-      if (hasDangerousUrl) {
-        ocorrencias.push(
-          warn(TailwindMessages.dangerousArbitraryValue(token), relPath, line),
-        );
-        return;
-      }
+  allTokens.filter(({
+    token
+  }) => /\[.*\]/.test(token)).forEach(({
+    token,
+    line
+  }) => {
+    const hasDangerousUrl = /\[.*url\(.+\).*\]/i.test(token) && /javascript:|data:text\/html/i.test(token);
+    if (hasDangerousUrl) {
+      ocorrencias.push(warn(TailwindMensagens.dangerousArbitraryValue(token), relPath, line));
+      return;
+    }
 
-      // Evita ruído: ignore vars, cores, gradientes, calc, unidades comuns, etc.
-      if (safeArbitrary.test(token)) return;
-
-      ocorrencias.push(
-        warn(TailwindMessages.arbitraryValue(token), relPath, line),
-      );
-    });
+    // Evita ruído: ignore vars, cores, gradientes, calc, unidades comuns, etc.
+    if (safeArbitrary.test(token)) return;
+    ocorrencias.push(warn(TailwindMensagens.arbitraryValue(token), relPath, line));
+  });
 
   // Important usage detection (e.g., 'text-red-500!')
-  allTokens
-    .filter(({ token }) => /!$/.test(token) || /!\]/.test(token))
-    .forEach(({ token, line }) => {
-      ocorrencias.push(
-        warn(
-          TailwindMessages.importantUsage(token),
-          relPath,
-          line,
-          SeverityLevels.suggestion,
-        ),
-      );
-    });
-
+  allTokens.filter(({
+    token
+  }) => /!$/.test(token) || /!\]/.test(token)).forEach(({
+    token,
+    line
+  }) => {
+    ocorrencias.push(warn(TailwindMensagens.importantUsage(token), relPath, line, SeverityNiveis.suggestion));
+  });
   return ocorrencias;
 }
-
 export const analistaTailwind = criarAnalista({
   nome: 'analista-tailwind',
   categoria: 'estilo',
   descricao: 'Heurísticas leves de Tailwind.',
   global: false,
-  test: (relPath: string): boolean =>
-    /\.(jsx|tsx|js|ts|html|astro)$/i.test(relPath),
+  test: (relPath: string): boolean => /\.(jsx|tsx|js|ts|html|astro)$/i.test(relPath),
   aplicar: async (src, relPath): Promise<Msg[] | null> => {
     if (disableEnv) return null;
     if (!hasTailwindTokens(src)) return null;
     const msgs = collectTailwindIssues(src, relPath);
     return msgs.length ? msgs : null;
-  },
+  }
 });
-
 export default analistaTailwind;

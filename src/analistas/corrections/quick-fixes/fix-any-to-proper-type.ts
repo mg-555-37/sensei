@@ -6,40 +6,28 @@
 
 import type { Node } from '@babel/types';
 import { buildTypesRelPathPosix } from '@core/config/conventions.js';
-import { MENSAGENS_FIX_TYPES } from '@core/messages/index.js';
-
+import { MENSAGENS_CORRECAO_TIPOS } from '@core/messages/index.js';
 import type { QuickFix, QuickFixResult, TypeSafetyWarning } from '@';
-
-import {
-  isAnyInGenericFunction,
-  isInStringOrComment,
-  isLegacyOrVendorFile,
-  isTypeScriptContext,
-} from '../type-safety/context-analyzer.js';
+import { isAnyInGenericFunction, isInStringOrComment, isLegacyOrVendorFile, isTypeScriptContext } from '../type-safety/context-analyzer.js';
 import { analyzeTypeUsage } from '../type-safety/type-analyzer.js';
 import { createTypeDefinition } from '../type-safety/type-creator.js';
 import { validateTypeReplacement } from '../type-safety/type-validator.js';
-
-const CONFIDENCE_LEVELS = {
+const CONFIANCA_NIVEIS = {
   HIGH: 85,
   MEDIUM: 60,
-  DEFAULT: 70,
+  DEFAULT: 70
 } as const;
-
-export const fixAnyToProperType: QuickFix = {
+export const fixAnyToProperTipo: QuickFix = {
   id: 'fix-any-to-proper-type',
-  title: MENSAGENS_FIX_TYPES.fixAny.title,
-  description: MENSAGENS_FIX_TYPES.fixAny.description,
+  title: MENSAGENS_CORRECAO_TIPOS.fixAny.title,
+  description: MENSAGENS_CORRECAO_TIPOS.fixAny.description,
   pattern: /:\s*any\b/g,
-  category: 'style', // Type safety é considerado 'style' pois não afeta execução
-  confidence: CONFIDENCE_LEVELS.DEFAULT, // Média - requer análise contextual
+  category: 'style',
+  // Type safety é considerado 'style' pois não afeta execução
+  confidence: CONFIANCA_NIVEIS.DEFAULT,
+  // Média - requer análise contextual
 
-  shouldApply: (
-    match: RegExpMatchArray,
-    fullCode: string,
-    lineContext: string,
-    filePath?: string,
-  ) => {
+  shouldApply: (match: RegExpMatchArray, fullCode: string, lineContext: string, fileCaminho?: string) => {
     // 1. Verificar contexto básico
     if (isInStringOrComment(fullCode, match.index || 0)) {
       return false;
@@ -51,12 +39,12 @@ export const fixAnyToProperType: QuickFix = {
     }
 
     // 3. Não modificar arquivos de definição de tipos
-    if (filePath?.includes('.d.ts') || filePath?.includes('/@types/')) {
+    if (fileCaminho?.includes('.d.ts') || fileCaminho?.includes('/@types/')) {
       return false;
     }
 
     // 4. Não modificar vendor/node_modules
-    if (isLegacyOrVendorFile(filePath)) {
+    if (isLegacyOrVendorFile(fileCaminho)) {
       return false;
     }
 
@@ -64,159 +52,122 @@ export const fixAnyToProperType: QuickFix = {
     if (isAnyInGenericFunction(fullCode, match.index || 0)) {
       return false; // any pode ser apropriado aqui
     }
-
     return true;
   },
-
   fix: (match: RegExpMatchArray, fullCode: string) => {
     // Retornar código sem modificação por padrão
     // A aplicação real deve ser feita via fixAsync
     return fullCode;
-  },
+  }
 };
 
 /**
  * Versão assíncrona do fix que faz análise completa
  */
-export async function fixAnyToProperTypeAsync(
-  match: RegExpMatchArray,
-  fullCode: string,
-  filePath: string,
-  ast: Node | null,
-): Promise<QuickFixResult> {
+export async function fixAnyToProperTypeAsync(match: RegExpMatchArray, fullCode: string, fileCaminho: string, ast: Node | null): Promise<QuickFixResult> {
   try {
     // 1. Analisar uso do tipo
-    const typeAnalysis = await analyzeTypeUsage(match, fullCode, filePath, ast);
+    const typeAnalise = await analyzeTypeUsage(match, fullCode, fileCaminho, ast);
 
     // 2. Estratégia baseada em confiança
-    if (typeAnalysis.confidence >= CONFIDENCE_LEVELS.HIGH) {
+    if (typeAnalise.confidence >= CONFIANCA_NIVEIS.HIGH) {
       // ALTA CONFIANÇA: Aplicar tipo automaticamente
 
-      if (typeAnalysis.isSimpleType) {
+      if (typeAnalise.isSimpleType) {
         // Tipo primitivo: substituir diretamente
-        const fixedCode = fullCode.replace(
-          match[0],
-          `: ${typeAnalysis.inferredType}`,
-        );
+        const fixedCodigo = fullCode.replace(match[0], `: ${typeAnalise.inferredTipo}`);
 
         // Validar resultado
-        const validation = await validateTypeReplacement(
-          fullCode,
-          fixedCode,
-          typeAnalysis,
-        );
-
+        const validation = await validateTypeReplacement(fullCode, fixedCodigo, typeAnalise);
         if (!validation.isCompatible) {
           return {
             code: fullCode,
             applied: false,
             reason: `Validação falhou: ${validation.errors.join(', ')}`,
-            warnings: validation.warnings.map((w) => ({
+            warnings: validation.warnings.map(w => ({
               type: 'unsafe-type',
               message: w,
-              suggestion: 'Revise manualmente',
-            })),
+              suggestion: 'Revise manualmente'
+            }))
           };
         }
-
         return {
-          code: fixedCode,
+          code: fixedCodigo,
           applied: true,
-          warnings: validation.warnings.map((w) => ({
+          warnings: validation.warnings.map(w => ({
             type: 'type-suggestion',
             message: w,
-            suggestion: MENSAGENS_FIX_TYPES.validacao.revisar,
-          })),
+            suggestion: MENSAGENS_CORRECAO_TIPOS.validacao.revisar
+          }))
         };
       } else {
         // Tipo complexo: criar interface
-        const typePath = await createTypeDefinition(typeAnalysis, filePath);
-        const importStatement = `import type { ${typeAnalysis.typeName} } from '${typePath}';\n`;
+        const typeCaminho = await createTypeDefinition(typeAnalise, fileCaminho);
+        const importStatement = `import type { ${typeAnalise.typeName} } from '${typeCaminho}';\n`;
 
         // Adicionar import no topo e substituir any
         const lines = fullCode.split('\n');
         const importIndex = findImportInsertionPoint(lines);
         lines.splice(importIndex, 0, importStatement);
-
-        let fixedCode = lines.join('\n');
-        fixedCode = fixedCode.replace(match[0], `: ${typeAnalysis.typeName}`);
+        let fixedCodigo = lines.join('\n');
+        fixedCodigo = fixedCodigo.replace(match[0], `: ${typeAnalise.typeName}`);
 
         // Validar resultado
-        const validation = await validateTypeReplacement(
-          fullCode,
-          fixedCode,
-          typeAnalysis,
-        );
-
+        const validation = await validateTypeReplacement(fullCode, fixedCodigo, typeAnalise);
         if (!validation.isCompatible) {
           return {
             code: fullCode,
             applied: false,
-            reason: `Validação falhou: ${validation.errors.join(', ')}`,
+            reason: `Validação falhou: ${validation.errors.join(', ')}`
           };
         }
-
         return {
-          code: fixedCode,
+          code: fixedCodigo,
           applied: true,
-          additionalChanges: [
-            {
-              type: 'add-import',
-              content: importStatement,
-            },
-            {
-              type: 'create-type-file',
-              content: typeAnalysis.typeDefinition,
-              path: buildTypesRelPathPosix(typeAnalysis.suggestedPath),
-            },
-          ],
+          additionalChanges: [{
+            type: 'add-import',
+            content: importStatement
+          }, {
+            type: 'create-type-file',
+            content: typeAnalise.typeDefinition,
+            path: buildTypesRelPathPosix(typeAnalise.suggestedPath)
+          }]
         };
       }
-    } else if (typeAnalysis.confidence >= CONFIDENCE_LEVELS.MEDIUM) {
+    } else if (typeAnalise.confidence >= CONFIANCA_NIVEIS.MEDIUM) {
       // MÉDIA CONFIANÇA: Sugerir mas não aplicar
       const warning: TypeSafetyWarning = {
         type: 'type-suggestion',
-        message: MENSAGENS_FIX_TYPES.warnings.confiancaMedia(
-          typeAnalysis.confidence,
-          typeAnalysis.inferredType,
-        ),
-        suggestion: MENSAGENS_FIX_TYPES.warnings.criarTipoDedicado(
-          typeAnalysis.suggestedPath,
-        ),
-        confidence: typeAnalysis.confidence,
+        message: MENSAGENS_CORRECAO_TIPOS.warnings.confiancaMedia(typeAnalise.confidence, typeAnalise.inferredTipo),
+        suggestion: MENSAGENS_CORRECAO_TIPOS.warnings.criarTipoDedicado(typeAnalise.suggestedPath),
+        confidence: typeAnalise.confidence
       };
-
       return {
         code: fullCode,
         applied: false,
-        reason: `Confiança média (${typeAnalysis.confidence}%) - sugestão apenas`,
-        warnings: [warning],
+        reason: `Confiança média (${typeAnalise.confidence}%) - sugestão apenas`,
+        warnings: [warning]
       };
     } else {
       // BAIXA CONFIANÇA: Apenas avisar
       const warning: TypeSafetyWarning = {
         type: 'unsafe-type',
-        message: MENSAGENS_FIX_TYPES.warnings.confiancaBaixa(
-          typeAnalysis.confidence,
-        ),
-        suggestion: MENSAGENS_FIX_TYPES.warnings.useTiposCentralizados(),
-        needsManualReview: true,
+        message: MENSAGENS_CORRECAO_TIPOS.warnings.confiancaBaixa(typeAnalise.confidence),
+        suggestion: MENSAGENS_CORRECAO_TIPOS.warnings.useTiposCentralizados(),
+        needsManualReview: true
       };
-
       return {
         code: fullCode,
         applied: false,
-        reason: `Confiança baixa (${typeAnalysis.confidence}%)`,
-        warnings: [warning],
+        reason: `Confiança baixa (${typeAnalise.confidence}%)`,
+        warnings: [warning]
       };
     }
   } catch (error) {
     return {
       code: fullCode,
       applied: false,
-      reason: MENSAGENS_FIX_TYPES.erros.analise(
-        error instanceof Error ? error.message : String(error),
-      ),
+      reason: MENSAGENS_CORRECAO_TIPOS.erros.analise(error instanceof Error ? error.message : String(error))
     };
   }
 }
@@ -226,16 +177,11 @@ export async function fixAnyToProperTypeAsync(
  */
 function findImportInsertionPoint(lines: string[]): number {
   let lastImportIndex = -1;
-
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
 
     // Pular comentários no topo
-    if (
-      line.startsWith('//') ||
-      line.startsWith('/*') ||
-      line.startsWith('*')
-    ) {
+    if (line.startsWith('//') || line.startsWith('/*') || line.startsWith('*')) {
       continue;
     }
 

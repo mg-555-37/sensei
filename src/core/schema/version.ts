@@ -6,8 +6,7 @@
  * garantindo compatibilidade futura e evolução controlada dos formatos.
  */
 
-import { ExcecoesMessages } from '@core/messages/core/excecoes-messages.js';
-
+import { ExcecoesMensagens } from '@core/messages/core/excecoes-messages.js';
 import type { RelatorioComVersao, SchemaMetadata } from '@';
 
 // Re-exporta os tipos para compatibilidade
@@ -23,37 +22,25 @@ export const HISTORICO_VERSOES: Record<string, SchemaMetadata> = {
     criadoEm: '2025-08-28',
     descricao: 'Versão inicial com campos básicos de relatório',
     compatibilidade: ['1.0.0'],
-    camposObrigatorios: [
-      '_schema',
-      'dados',
-      '_schema.versao',
-      '_schema.criadoEm',
-      '_schema.descricao',
-    ],
-    camposOpcionais: [
-      '_schema.compatibilidade',
-      '_schema.camposObrigatorios',
-      '_schema.camposOpcionais',
-    ],
-  },
+    camposObrigatorios: ['_schema', 'dados', '_schema.versao', '_schema.criadoEm', '_schema.descricao'],
+    camposOpcionais: ['_schema.compatibilidade', '_schema.camposObrigatorios', '_schema.camposOpcionais']
+  }
 };
 
 /**
  * Cria metadados de schema para a versão atual
  */
 
-export function criarSchemaMetadata(
-  versao: string = VERSAO_ATUAL,
-  descricaoPersonalizada?: string,
-): SchemaMetadata {
+export function criarSchemaMetadata(versao: string = VERSAO_ATUAL, descricaoPersonalizada?: string): SchemaMetadata {
   const base = HISTORICO_VERSOES[versao];
   if (!base) {
-    throw new Error(ExcecoesMessages.versaoSchemaDesconhecida(versao));
+    throw new Error(ExcecoesMensagens.versaoSchemaDesconhecida(versao));
   }
-
   return {
     ...base,
-    ...(descricaoPersonalizada && { descricao: descricaoPersonalizada }),
+    ...(descricaoPersonalizada && {
+      descricao: descricaoPersonalizada
+    })
   };
 }
 
@@ -70,15 +57,20 @@ export function validarSchema(relatorio: Record<string, unknown>): {
   // Verificar estrutura básica
   if (!relatorio || typeof relatorio !== 'object') {
     erros.push('Relatório deve ser um objeto');
-    return { valido: false, erros };
+    return {
+      valido: false,
+      erros
+    };
   }
 
   // Verificar presença do schema
   if (!('_schema' in relatorio) || !relatorio._schema) {
     erros.push('Campo _schema é obrigatório');
-    return { valido: false, erros };
+    return {
+      valido: false,
+      erros
+    };
   }
-
   const schema = relatorio._schema as Record<string, unknown>;
 
   // Verificar campos obrigatórios do schema
@@ -90,11 +82,7 @@ export function validarSchema(relatorio: Record<string, unknown>): {
   }
 
   // Verificar se a versão existe no histórico
-  if (
-    schema.versao &&
-    typeof schema.versao === 'string' &&
-    !HISTORICO_VERSOES[schema.versao]
-  ) {
+  if (schema.versao && typeof schema.versao === 'string' && !HISTORICO_VERSOES[schema.versao]) {
     erros.push(`Versão de schema desconhecida: ${schema.versao}`);
   }
 
@@ -102,19 +90,16 @@ export function validarSchema(relatorio: Record<string, unknown>): {
   if (!('dados' in relatorio)) {
     erros.push('Campo dados é obrigatório');
   }
-
   return {
     valido: erros.length === 0,
-    erros,
+    erros
   };
 }
 
 /**
  * Migra um relatório para a versão atual se necessário
  */
-export function migrarParaVersaoAtual<T>(
-  relatorio: Record<string, unknown>,
-): RelatorioComVersao<T> {
+export function migrarParaVersaoAtual<T>(relatorio: Record<string, unknown>): RelatorioComVersao<T> {
   // Se já tem schema válido, retornar como está
   const validacao = validarSchema(relatorio);
   if (validacao.valido && relatorio._schema) {
@@ -133,25 +118,18 @@ export function migrarParaVersaoAtual<T>(
   // Para futuras migrações, implementar lógica aqui
   // Por enquanto, apenas revalidar
   if (!validacao.valido) {
-    throw new Error(
-      ExcecoesMessages.relatorioSchemaInvalido(validacao.erros.join(', ')),
-    );
+    throw new Error(ExcecoesMensagens.relatorioSchemaInvalido(validacao.erros.join(', ')));
   }
-
   return relatorio as unknown as RelatorioComVersao<T>;
 }
 
 /**
  * Cria um relatório com versão atual
  */
-export function criarRelatorioComVersao<T>(
-  dados: T,
-  versao: string = VERSAO_ATUAL,
-  descricao?: string,
-): RelatorioComVersao<T> {
+export function criarRelatorioComVersao<T>(dados: T, versao: string = VERSAO_ATUAL, descricao?: string): RelatorioComVersao<T> {
   return {
     _schema: criarSchemaMetadata(versao, descricao),
-    dados,
+    dados
   };
 }
 
@@ -169,6 +147,5 @@ export function extrairDados<T>(relatorio: RelatorioComVersao<T>): T {
 export function versaoCompativel(versao: string): boolean {
   const metadata = HISTORICO_VERSOES[versao];
   if (!metadata) return false;
-
   return metadata.compatibilidade.includes(VERSAO_ATUAL);
 }

@@ -10,30 +10,26 @@ import type { Ocorrencia } from '../comum/ocorrencias.js';
 /**
  * Entrada de arquivo flexível para fragmentação (tipo union específico)
  */
-export type FileEntryFragmentacao =
-  | FileEntryWithAst
-  | {
-      relPath?: string;
-      fullPath?: string;
-      path?: string;
-      content?: string | null;
-      [k: string]: unknown;
-    };
+export type FileEntryFragmentacao = FileEntryWithAst | {
+  relPath?: string;
+  fullCaminho?: string;
+  path?: string;
+  content?: string | null;
+  [k: string]: unknown;
+};
 
 /**
  * Manifesto de fragmentação
  */
 export interface Manifest {
   generatedAt: string;
-  baseName: string;
+  baseNome: string;
   parts: ManifestPart[];
 }
-
 export interface FragmentOptions {
   maxOcorrenciasPerShard?: number;
   maxFileEntriesPerShard?: number;
 }
-
 export interface ManifestPart {
   file: string;
   items?: number;
@@ -47,7 +43,6 @@ export interface ManifestPart {
   summary?: Record<string, unknown>;
   [k: string]: unknown;
 }
-
 export interface RelatorioCompleto {
   resultado?: unknown; // Pode ser ResultadoInquisicaoCompleto ou estrutura customizada
   ocorrencias?: Ocorrencia[];

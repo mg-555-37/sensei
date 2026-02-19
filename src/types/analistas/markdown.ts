@@ -9,11 +9,7 @@
 /**
  * Tipo de problema detectado em Markdown
  */
-export type MarkdownProblemaTipo =
-  | 'licenca-incompativel'
-  | 'falta-proveniencia'
-  | 'referencia-risco'
-  | 'formato-invalido';
+export type MarkdownProblemaTipo = 'licenca-incompativel' | 'falta-proveniencia' | 'referencia-risco' | 'formato-invalido';
 
 /**
  * Severidade do problema
@@ -45,7 +41,7 @@ export interface MarkdownAnaliseArquivo {
   /** Caminho relativo do arquivo */
   relPath: string;
   /** Caminho absoluto do arquivo */
-  fullPath: string;
+  fullCaminho: string;
   /** Problemas encontrados */
   problemas: MarkdownProblema[];
   /** Tem aviso de proveniência */

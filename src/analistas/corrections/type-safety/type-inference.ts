@@ -6,35 +6,25 @@
  * Infere tipos primitivos e cria interfaces para objetos complexos
  */
 
-import type {
-  InferredInterface,
-  PropertyUsage,
-  TypeAnalysis,
-  UsagePattern,
-} from '@';
-
+import type { InferredInterface, PropertyUsage, TypeAnalysis, UsagePattern } from '@';
 import { toKebabCase } from './context-analyzer.js';
 
 /**
  * Infere tipo baseado em padrões de uso
  */
-export function inferTypeFromUsage(
-  varName: string,
-  patterns: UsagePattern,
-  _filePath: string,
-): TypeAnalysis {
+export function inferTypeFromUsage(varNome: string, patterns: UsagePattern, _filePath: string): TypeAnalysis {
   const result: TypeAnalysis = {
     confidence: 0,
-    inferredType: 'unknown',
+    inferredTipo: 'unknown',
     isSimpleType: false,
     typeName: '',
     typeDefinition: '',
-    suggestedPath: '',
+    suggestedPath: ''
   };
 
   // Tipo primitivo: string
   if (patterns.allUsagesAreString) {
-    result.inferredType = 'string';
+    result.inferredTipo = 'string';
     result.isSimpleType = true;
     result.confidence = 95;
     return result;
@@ -42,7 +32,7 @@ export function inferTypeFromUsage(
 
   // Tipo primitivo: number
   if (patterns.allUsagesAreNumber) {
-    result.inferredType = 'number';
+    result.inferredTipo = 'number';
     result.isSimpleType = true;
     result.confidence = 95;
     return result;
@@ -50,7 +40,7 @@ export function inferTypeFromUsage(
 
   // Tipo primitivo: boolean
   if (patterns.allUsagesAreBoolean) {
-    result.inferredType = 'boolean';
+    result.inferredTipo = 'boolean';
     result.isSimpleType = true;
     result.confidence = 95;
     return result;
@@ -59,33 +49,26 @@ export function inferTypeFromUsage(
   // Array
   if (patterns.isArray) {
     // Tentar inferir tipo do array
-    const elementType = inferArrayElementType(patterns);
-    result.inferredType = `${elementType}[]`;
-    result.isSimpleType =
-      elementType === 'string' ||
-      elementType === 'number' ||
-      elementType === 'boolean';
+    const elementTipo = inferArrayElementType(patterns);
+    result.inferredTipo = `${elementTipo}[]`;
+    result.isSimpleType = elementTipo === 'string' || elementTipo === 'number' || elementTipo === 'boolean';
     result.confidence = 85;
     return result;
   }
 
   // Function
   if (patterns.isFunction) {
-    result.inferredType = 'Function';
+    result.inferredTipo = 'Function';
     result.isSimpleType = true;
     result.confidence = 80;
-    result.suggestion =
-      'Considere usar tipo de função específico: (param: T) => R';
+    result.suggestion = 'Considere usar tipo de função específico: (param: T) => R';
     return result;
   }
 
   // Objeto complexo
   if (patterns.hasObjectStructure && patterns.objectProperties) {
-    const inferredInterface = inferInterfaceFromProperties(
-      varName,
-      patterns.objectProperties,
-    );
-    result.inferredType = inferredInterface.name;
+    const inferredInterface = inferInterfaceFromProperties(varNome, patterns.objectProperties);
+    result.inferredTipo = inferredInterface.name;
     result.typeName = inferredInterface.name;
     result.typeDefinition = inferredInterface.definition;
     result.isSimpleType = false;
@@ -98,16 +81,16 @@ export function inferTypeFromUsage(
 
   // Type guards encontrados
   if (patterns.hasTypeGuards && patterns.typeGuards) {
-    const guardType = extractTypeFromGuards(patterns.typeGuards);
-    result.inferredType = guardType.type;
-    result.isSimpleType = isPrimitiveType(guardType.type);
-    result.confidence = guardType.confidence;
+    const guardTipo = extractTypeFromGuards(patterns.typeGuards);
+    result.inferredTipo = guardTipo.type;
+    result.isSimpleType = isPrimitiveType(guardTipo.type);
+    result.confidence = guardTipo.confidence;
     return result;
   }
 
   // União de tipos detectada
   if (patterns.unionTypes && patterns.unionTypes.length > 0) {
-    result.inferredType = patterns.unionTypes.join(' | ');
+    result.inferredTipo = patterns.unionTypes.join(' | ');
     result.isSimpleType = false;
     result.confidence = 70;
     result.suggestion = 'Considere criar type alias para união complexa';
@@ -115,7 +98,7 @@ export function inferTypeFromUsage(
   }
 
   // Não conseguiu inferir
-  result.inferredType = 'unknown';
+  result.inferredTipo = 'unknown';
   result.confidence = 30;
   result.suggestion = 'Adicione type guards ou crie tipo dedicado manualmente';
   return result;
@@ -124,54 +107,57 @@ export function inferTypeFromUsage(
 /**
  * Cria interface baseado em propriedades detectadas
  */
-export function inferInterfaceFromProperties(
-  varName: string,
-  properties: PropertyUsage[],
-): InferredInterface {
-  const interfaceName = toPascalCase(varName);
+export function inferInterfaceFromProperties(varNome: string, properties: PropertyUsage[]): InferredInterface {
+  const interfaceNome = toPascalCase(varNome);
   const confidence = calculateInterfaceConfidence(properties);
-
-  const propertiesCode = properties
-    .map((prop) => {
-      const optional = prop.isOptional ? '?' : '';
-      return `  ${prop.name}${optional}: ${prop.inferredType};`;
-    })
-    .join('\n');
-
-  const definition = `export interface ${interfaceName} {\n${propertiesCode}\n}`;
-
+  const propertiesCodigo = properties.map(prop => {
+    const optional = prop.isOptional ? '?' : '';
+    return `  ${prop.name}${optional}: ${prop.inferredTipo};`;
+  }).join('\n');
+  const definition = `export interface ${interfaceNome} {\n${propertiesCodigo}\n}`;
   return {
-    name: interfaceName,
+    name: interfaceNome,
     definition,
     confidence,
-    properties,
+    properties
   };
 }
 
 /**
  * Extrai tipo de type guards
  */
-export function extractTypeFromGuards(
-  typeGuards: Array<{ type: string; inferredType: string; confidence: number }>,
-): { type: string; confidence: number } {
+export function extractTypeFromGuards(typeGuards: Array<{
+  type: string;
+  inferredTipo: string;
+  confidence: number;
+}>): {
+  type: string;
+  confidence: number;
+} {
   if (typeGuards.length === 0) {
-    return { type: 'unknown', confidence: 0 };
+    return {
+      type: 'unknown',
+      confidence: 0
+    };
   }
 
   // Se todos os guards apontam para o mesmo tipo
-  const types = typeGuards.map((g) => g.inferredType);
-  const uniqueTypes = [...new Set(types)];
-
-  if (uniqueTypes.length === 1) {
-    const avgConfidence =
-      typeGuards.reduce((sum, g) => sum + g.confidence, 0) / typeGuards.length;
-    return { type: uniqueTypes[0], confidence: avgConfidence };
+  const types = typeGuards.map(g => g.inferredTipo);
+  const uniqueTipos = [...new Set(types)];
+  if (uniqueTipos.length === 1) {
+    const avgConfidence = typeGuards.reduce((sum, g) => sum + g.confidence, 0) / typeGuards.length;
+    return {
+      type: uniqueTipos[0],
+      confidence: avgConfidence
+    };
   }
 
   // Múltiplos tipos - criar união
-  const avgConfidence =
-    typeGuards.reduce((sum, g) => sum + g.confidence, 0) / typeGuards.length;
-  return { type: uniqueTypes.join(' | '), confidence: avgConfidence * 0.9 }; // Penalizar união
+  const avgConfidence = typeGuards.reduce((sum, g) => sum + g.confidence, 0) / typeGuards.length;
+  return {
+    type: uniqueTipos.join(' | '),
+    confidence: avgConfidence * 0.9
+  }; // Penalizar união
 }
 
 /**
@@ -183,15 +169,12 @@ function calculateInterfaceConfidence(properties: PropertyUsage[]): number {
   }
 
   // Média da confiança das propriedades
-  const avgConfidence =
-    properties.reduce((sum, prop) => sum + prop.confidence, 0) /
-    properties.length;
+  const avgConfidence = properties.reduce((sum, prop) => sum + prop.confidence, 0) / properties.length;
 
   // Bonus por número de propriedades (mais propriedades = mais confiável)
   let bonus = 0;
   if (properties.length >= 3) bonus = 5;
   if (properties.length >= 5) bonus = 10;
-
   return Math.min(100, Math.round(avgConfidence + bonus));
 }
 
@@ -210,15 +193,7 @@ function inferArrayElementType(patterns: UsagePattern): string {
  * Verifica se é tipo primitivo
  */
 function isPrimitiveType(type: string): boolean {
-  const primitives = [
-    'string',
-    'number',
-    'boolean',
-    'null',
-    'undefined',
-    'symbol',
-    'bigint',
-  ];
+  const primitives = ['string', 'number', 'boolean', 'null', 'undefined', 'symbol', 'bigint'];
   return primitives.includes(type.toLowerCase());
 }
 
@@ -226,9 +201,5 @@ function isPrimitiveType(type: string): boolean {
  * Converte string para PascalCase
  */
 function toPascalCase(str: string): string {
-  return str
-    .replace(/([a-z])([A-Z])/g, '$1 $2')
-    .split(/[\s_-]+/)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join('');
+  return str.replace(/([a-z])([A-Z])/g, '$1 $2').split(/[\s_-]+/).map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join('');
 }

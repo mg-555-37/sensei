@@ -5,28 +5,15 @@
  */
 
 import { config } from '@core/config/config.js';
-import {
-  LogContextConfig,
-  LogMessages,
-} from '@core/messages/log/log-messages.js';
+import { LogContextConfiguracao, LogMensagens } from '@core/messages/log/log-messages.js';
 import { ICONES_FEEDBACK } from '@core/messages/ui/icons.js';
 import { isJsonMode } from '@shared/helpers/json-mode.js';
-
-import type {
-  FileMap,
-  LogContext,
-  LogData,
-  LogLevel,
-  LogTemplate,
-  ProjetoMetricas,
-} from '@';
-
+import type { FileMap, LogContext, LogData, LogLevel, LogTemplate, ProjetoMetricas } from '@';
 class LogEngineAdaptativo {
   private static instance: LogEngineAdaptativo;
   private contextoAtual: LogContext = 'medio';
   private metricas: ProjetoMetricas | null = null;
   private isCI: boolean = false;
-
   static getInstance(): LogEngineAdaptativo {
     if (!LogEngineAdaptativo.instance) {
       LogEngineAdaptativo.instance = new LogEngineAdaptativo();
@@ -44,39 +31,31 @@ class LogEngineAdaptativo {
     // Prioridade: CI > Complexidade > Padrão
     if (this.isCI) {
       this.contextoAtual = 'ci';
-      this.log('debug', LogMessages.contexto.ci_cd, {});
+      this.log('debug', LogMensagens.contexto.ci_cd, {});
       return 'ci';
     }
-
     const complexidade = this.metricas.estruturaComplexidade;
     const totalArquivos = this.metricas.totalArquivos;
     const linguagens = this.metricas.linguagens.length;
-
     if (totalArquivos < 20 && linguagens <= 2 && !this.metricas.temTestes) {
       this.contextoAtual = 'simples';
-      this.log('info', LogMessages.contexto.desenvolvedor_novo, {});
-    } else if (
-      totalArquivos > 100 ||
-      linguagens > 3 ||
-      complexidade === 'complexa'
-    ) {
+      this.log('info', LogMensagens.contexto.desenvolvedor_novo, {});
+    } else if (totalArquivos > 100 || linguagens > 3 || complexidade === 'complexa') {
       this.contextoAtual = 'complexo';
-      this.log('info', LogMessages.contexto.equipe_experiente, {});
+      this.log('info', LogMensagens.contexto.equipe_experiente, {});
     } else {
       this.contextoAtual = 'medio';
     }
 
     // Log de detecção do projeto
-    this.log('info', LogMessages.projeto.detectado, {
+    this.log('info', LogMensagens.projeto.detectado, {
       tipo: this.contextoAtual,
-      confianca: this.calcularConfianca(),
+      confianca: this.calcularConfianca()
     });
-
-    this.log('debug', LogMessages.projeto.estrutura, {
+    this.log('debug', LogMensagens.projeto.estrutura, {
       arquivos: totalArquivos,
-      linguagens,
+      linguagens
     });
-
     return this.contextoAtual;
   }
 
@@ -88,52 +67,26 @@ class LogEngineAdaptativo {
     const totalArquivos = arquivos.length;
 
     // Detecta linguagens pelos extensions
-    const extensoes = new Set(
-      arquivos
-        .map((f) => f.relPath.split('.').pop()?.toLowerCase())
-        .filter((ext): ext is string => Boolean(ext)),
-    );
-
-    const linguagens = Array.from(extensoes).filter((ext) =>
-      ['js', 'ts', 'jsx', 'tsx', 'html', 'css', 'php', 'py', 'xml'].includes(
-        ext,
-      ),
-    );
+    const extensoes = new Set(arquivos.map(f => f.relPath.split('.').pop()?.toLowerCase()).filter((ext): ext is string => Boolean(ext)));
+    const linguagens = Array.from(extensoes).filter(ext => ['js', 'ts', 'jsx', 'tsx', 'html', 'css', 'php', 'py', 'xml'].includes(ext));
 
     // Detecta estrutura complexa
-    const temSrcFolder = arquivos.some((f) => f.relPath.startsWith('src/'));
-    const temMultiplosDiretorios =
-      new Set(arquivos.map((f) => f.relPath.split('/')[0])).size > 5;
-    const temConfigFiles = arquivos.some((f) =>
-      [
-        'package.json',
-        'tsconfig.json',
-        'webpack.config.js',
-        'vite.config.ts',
-      ].includes(f.relPath.split('/').pop() || ''),
-    );
-
+    const temSrcFolder = arquivos.some(f => f.relPath.startsWith('src/'));
+    const temMultiplosDiretorios = new Set(arquivos.map(f => f.relPath.split('/')[0])).size > 5;
+    const temConfiguracaoArquivos = arquivos.some(f => ['package.json', 'tsconfig.json', 'webpack.config.js', 'vite.config.ts'].includes(f.relPath.split('/').pop() || ''));
     let estruturaComplexidade: 'simples' | 'media' | 'complexa' = 'simples';
     if (totalArquivos > 100 || temMultiplosDiretorios) {
       estruturaComplexidade = 'complexa';
-    } else if (totalArquivos > 20 || temSrcFolder || temConfigFiles) {
+    } else if (totalArquivos > 20 || temSrcFolder || temConfiguracaoArquivos) {
       estruturaComplexidade = 'media';
     }
-
     return {
       totalArquivos,
       linguagens,
       estruturaComplexidade,
-      temCI: arquivos.some(
-        (f) =>
-          f.relPath.includes('.github/') || f.relPath.includes('.gitlab-ci'),
-      ),
-      temTestes: arquivos.some(
-        (f) => f.relPath.includes('test') || f.relPath.includes('spec'),
-      ),
-      temDependencias: arquivos.some(
-        (f) => f.relPath === 'package.json' || f.relPath === 'requirements.txt',
-      ),
+      temCI: arquivos.some(f => f.relPath.includes('.github/') || f.relPath.includes('.gitlab-ci')),
+      temTestes: arquivos.some(f => f.relPath.includes('test') || f.relPath.includes('spec')),
+      temDependencias: arquivos.some(f => f.relPath === 'package.json' || f.relPath === 'requirements.txt')
     };
   }
 
@@ -141,13 +94,7 @@ class LogEngineAdaptativo {
    * Detecta se está rodando em ambiente CI/CD
    */
   private detectarCI(): boolean {
-    return !!(
-      process.env.CI ||
-      process.env.GITHUB_ACTIONS ||
-      process.env.GITLAB_CI ||
-      process.env.JENKINS_URL ||
-      config.REPORT_SILENCE_LOGS
-    );
+    return !!(process.env.CI || process.env.GITHUB_ACTIONS || process.env.GITLAB_CI || process.env.JENKINS_URL || config.REPORT_SILENCE_LOGS);
   }
 
   /**
@@ -155,7 +102,6 @@ class LogEngineAdaptativo {
    */
   private calcularConfianca(): number {
     if (!this.metricas) return 50;
-
     let confianca = 60; // base
 
     // Fatores que aumentam confiança
@@ -163,7 +109,6 @@ class LogEngineAdaptativo {
     if (this.metricas.linguagens.length > 0) confianca += 10;
     if (this.metricas.temTestes) confianca += 10;
     if (this.metricas.temDependencias) confianca += 10;
-
     return Math.min(confianca, 95);
   }
 
@@ -175,16 +120,11 @@ class LogEngineAdaptativo {
     // Suprimimos logs visuais e mantemos apenas erros no stderr.
     if (isJsonMode()) {
       if (level !== 'erro') return;
-      const formattedMessage = this.formatMessage(
-        template,
-        data,
-        LogContextConfig[this.contextoAtual],
-      );
-      console.error(formattedMessage);
+      const formattedMensagem = this.formatMessage(template, data, LogContextConfiguracao[this.contextoAtual]);
+      console.error(formattedMensagem);
       return;
     }
-
-    const contextoConfig = LogContextConfig[this.contextoAtual];
+    const contextoConfiguracao = LogContextConfiguracao[this.contextoAtual];
 
     // Em CI, usar formato estruturado
     if (this.isCI && this.contextoAtual === 'ci') {
@@ -193,48 +133,37 @@ class LogEngineAdaptativo {
     }
 
     // Log normal com adaptações
-    const formattedMessage = this.formatMessage(template, data, contextoConfig);
+    const formattedMensagem = this.formatMessage(template, data, contextoConfiguracao);
     const timestamp = this.formatTimestamp();
-
     const logMethod = this.getLogMethod(level);
-    logMethod(`[${timestamp}] ${formattedMessage}`);
+    logMethod(`[${timestamp}] ${formattedMensagem}`);
   }
 
   /**
    * Log estruturado para CI/CD
    */
-  private logEstruturado(
-    level: LogLevel,
-    template: LogTemplate,
-    data: LogData,
-  ): void {
-    const logEntry = {
+  private logEstruturado(level: LogLevel, template: LogTemplate, data: LogData): void {
+    const logEntrada = {
       timestamp: new Date().toISOString(),
       level,
       message: this.formatMessage(template, data),
       context: this.contextoAtual,
-      ...data,
+      ...data
     };
-
-    console.log(JSON.stringify(logEntry));
+    console.log(JSON.stringify(logEntrada));
   }
 
   /**
    * Formata mensagem baseada no contexto
    */
-  private formatMessage(
-    template: LogTemplate,
-    data: LogData,
-    contextoConfig = LogContextConfig[this.contextoAtual],
-  ): string {
-    const processedData = { ...data };
+  private formatMessage(template: LogTemplate, data: LogData, contextoConfiguracao = LogContextConfiguracao[this.contextoAtual]): string {
+    const processedData = {
+      ...data
+    };
 
     // Adapta formato de arquivo baseado no contexto
     if (processedData.arquivo && typeof processedData.arquivo === 'string') {
-      processedData.arquivo = this.formatarNomeArquivo(
-        processedData.arquivo,
-        contextoConfig.formato_arquivo,
-      );
+      processedData.arquivo = this.formatarNomeArquivo(processedData.arquivo, contextoConfiguracao.formato_arquivo);
     }
 
     // Aplica formatação de template
@@ -259,12 +188,10 @@ class LogEngineAdaptativo {
         return arquivo;
     }
   }
-
   private formatTimestamp(): string {
     const now = new Date();
     return now.toTimeString().slice(0, 8); // HH:mm:ss
   }
-
   private getLogMethod(level: LogLevel) {
     switch (level) {
       case 'erro':
@@ -282,7 +209,6 @@ class LogEngineAdaptativo {
   get contexto(): LogContext {
     return this.contextoAtual;
   }
-
   get metricas_projeto(): ProjetoMetricas | null {
     return this.metricas;
   }
@@ -292,13 +218,8 @@ class LogEngineAdaptativo {
    */
   forcarContexto(contexto: LogContext): void {
     this.contextoAtual = contexto;
-    this.log(
-      'debug',
-      `${ICONES_FEEDBACK.info} Contexto forçado para: ${contexto}`,
-      {},
-    );
+    this.log('debug', `${ICONES_FEEDBACK.info} Contexto forçado para: ${contexto}`, {});
   }
 }
-
 export const logEngine = LogEngineAdaptativo.getInstance();
 export { LogEngineAdaptativo };

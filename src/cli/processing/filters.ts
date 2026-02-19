@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 import fs from 'node:fs';
 import path from 'node:path';
-
 import { config } from '@core/config/config.js';
 import { mesclarConfigExcludes } from '@core/config/excludes-padrao.js';
 
@@ -9,30 +8,13 @@ import { mesclarConfigExcludes } from '@core/config/excludes-padrao.js';
  * Utilitários para processamento de filtros CLI
  */
 
-export function processPatternListAchatado(
-  raw: string[] | undefined,
-): string[] {
+export function processPatternListAchatado(raw: string[] | undefined): string[] {
   if (!raw || !raw.length) return [];
-  return Array.from(
-    new Set(
-      raw
-        .flatMap((r) => r.split(/[\s,]+/))
-        .map((s) => s.trim())
-        .filter(Boolean),
-    ),
-  );
+  return Array.from(new Set(raw.flatMap(r => r.split(/[\s,]+/)).map(s => s.trim()).filter(Boolean)));
 }
-
 export function processPatternGroups(raw: string[] | undefined): string[][] {
   if (!raw || !raw.length) return [];
-  return raw
-    .map((grupo) =>
-      grupo
-        .split(/[\s,]+/)
-        .map((s) => s.trim())
-        .filter(Boolean),
-    )
-    .filter((g) => g.length > 0);
+  return raw.map(grupo => grupo.split(/[\s,]+/).map(s => s.trim()).filter(Boolean)).filter(g => g.length > 0);
 }
 
 // Expansão de includes: aceita diretórios sem curingas
@@ -56,15 +38,12 @@ export function expandIncludes(list: string[]): string[] {
 
 export function getDefaultExcludes(): string[] {
   // Primeiro tenta obter do doutor.config.json do usuário
-  const configIncludeExclude = config.INCLUDE_EXCLUDE_RULES;
-  if (configIncludeExclude) {
+  const configIncluirExcluir = config.INCLUDE_EXCLUDE_RULES;
+  if (configIncluirExcluir) {
     // Prioriza `globalExcludeGlob` (configuração moderna). Se não existir,
     // usa `defaultExcludes` para compatibilidade com formas antigas.
-    if (
-      Array.isArray(configIncludeExclude.globalExcludeGlob) &&
-      configIncludeExclude.globalExcludeGlob.length > 0
-    ) {
-      return Array.from(new Set(configIncludeExclude.globalExcludeGlob));
+    if (Array.isArray(configIncluirExcluir.globalExcludeGlob) && configIncluirExcluir.globalExcludeGlob.length > 0) {
+      return Array.from(new Set(configIncluirExcluir.globalExcludeGlob));
     }
     // Se não houver globalExcludeGlob, cairá no fallback abaixo que mescla padrões do sistema
   }
@@ -81,48 +60,29 @@ function detectarTipoProjeto(): string {
   try {
     // Detecção básica baseada em arquivos presentes
     const cwd = process.cwd();
-
     if (fs.existsSync(path.join(cwd, 'package.json'))) {
       // Evita leitura de JSON aqui (função síncrona); usar heurística por arquivos
       // Heurística: presença de tsconfig.json indica TypeScript; caso contrário, Node.js
       if (fs.existsSync(path.join(cwd, 'tsconfig.json'))) return 'typescript';
       return 'nodejs';
     }
-
-    if (
-      fs.existsSync(path.join(cwd, 'requirements.txt')) ||
-      fs.existsSync(path.join(cwd, 'pyproject.toml'))
-    ) {
+    if (fs.existsSync(path.join(cwd, 'requirements.txt')) || fs.existsSync(path.join(cwd, 'pyproject.toml'))) {
       return 'python';
     }
-
-    if (
-      fs.existsSync(path.join(cwd, 'pom.xml')) ||
-      fs.existsSync(path.join(cwd, 'build.gradle'))
-    ) {
+    if (fs.existsSync(path.join(cwd, 'pom.xml')) || fs.existsSync(path.join(cwd, 'build.gradle'))) {
       return 'java';
     }
-
     const files = fs.readdirSync(cwd);
-    if (
-      files.some((file) => file.endsWith('.csproj')) ||
-      files.some((file) => file.endsWith('.sln'))
-    ) {
+    if (files.some(file => file.endsWith('.csproj')) || files.some(file => file.endsWith('.sln'))) {
       return 'dotnet';
     }
-
     return 'generico';
   } catch {
     return 'generico';
   }
 }
 // Função principal para configurar filtros CLI
-export function configurarFiltros(
-  includeGroupsRaw: string[][],
-  includeListFlat: string[],
-  excludeList: string[],
-  incluiNodeModules: boolean,
-): void {
+export function configurarFiltros(includeGroupsRaw: string[][], includeListFlat: string[], excludeList: string[], incluiNodeModules: boolean): void {
   // Configurar includes
   if (includeListFlat.length) {
     config.CLI_INCLUDE_GROUPS = includeGroupsRaw;
@@ -136,26 +96,23 @@ export function configurarFiltros(
   // 1. CLI --exclude (prioridade máxima)
   // 2. doutor.config.json (configuração do usuário)
   // 3. Padrões do sistema (fallback)
-  let finalExcludePatterns: string[];
-
+  let finalExcluirPadroes: string[];
   if (excludeList.length > 0) {
     // 1. Precedência máxima: flags --exclude têm prioridade
-    finalExcludePatterns = excludeList;
+    finalExcluirPadroes = excludeList;
   } else {
     // 2. Se não há flags, tenta configuração do usuário
-    finalExcludePatterns = getDefaultExcludes();
+    finalExcluirPadroes = getDefaultExcludes();
   }
 
   // Se node_modules está explicitamente incluído, remove dos padrões de exclusão
   if (incluiNodeModules) {
-    finalExcludePatterns = finalExcludePatterns.filter(
-      (p) => !/node_modules/.test(p),
-    );
+    finalExcluirPadroes = finalExcluirPadroes.filter(p => !/node_modules/.test(p));
   }
 
   // Aplicar configuração final
-  config.CLI_EXCLUDE_PATTERNS = finalExcludePatterns;
-  sincronizarArraysExclusao(finalExcludePatterns);
+  config.CLI_EXCLUDE_PATTERNS = finalExcluirPadroes;
+  sincronizarArraysExclusao(finalExcluirPadroes);
 }
 
 // Função auxiliar para sincronizar arrays de exclusão

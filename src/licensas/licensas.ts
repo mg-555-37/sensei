@@ -4,18 +4,16 @@ export interface ScanOptions {
   root?: string;
   includeDev?: boolean;
 }
-
 export interface PackageInfo {
   name: string;
   version: string;
   license: string;
   repository: string | null;
   private: boolean;
-  licenseFile: string | null;
+  licenseArquivo: string | null;
   licenseText: string | null;
   path: string;
 }
-
 export interface ScanResult {
   generatedAt: string;
   totalPackages: number;
@@ -24,11 +22,9 @@ export interface ScanResult {
   packages: PackageInfo[];
   problematic: PackageInfo[];
 }
-
 export interface DisclaimerAddResult {
-  updatedFiles: string[];
+  updatedArquivos: string[];
 }
-
 export interface DisclaimerVerifyResult {
   missing: string[];
 }

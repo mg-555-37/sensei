@@ -2,13 +2,11 @@
 
 // Importações dos tipos unificados
 import type { detectarArquetipos } from '@analistas/detectores/detector-arquetipos.js';
-
 import type { FileEntryWithAst, ResultadoExecucao, ResultadoGuardian } from '@';
-
 export interface OpcoesProcessamentoDiagnostico {
   guardianCheck?: boolean;
   full?: boolean;
-  logLevel?: string;
+  logNivel?: string;
   include?: string[];
   exclude?: string[];
   listarAnalistas?: boolean;
@@ -19,7 +17,7 @@ export interface OpcoesProcessamentoDiagnostico {
   salvarArquetipo?: boolean;
   detalhado?: boolean;
   autoFix?: boolean;
-  autoFixMode?: string;
+  autoCorrecaoMode?: string;
   autoFixConservative?: boolean;
   fast?: boolean; // Modo rápido: processamento paralelo
   // 🚀 NOVAS FLAGS INTUITIVAS
@@ -27,7 +25,6 @@ export interface OpcoesProcessamentoDiagnostico {
   fixSafe?: boolean;
   showFixes?: boolean;
 }
-
 export interface ResultadoProcessamentoDiagnostico {
   totalOcorrencias: number;
   temErro: boolean;

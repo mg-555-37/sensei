@@ -25,56 +25,56 @@ export function getAvailablePlugins(): string[] {
 /**
  * Configuração padrão de plugins para o Doutor
  */
-export const DEFAULT_PLUGIN_CONFIG = {
+export const PADRAO_PLUGIN_CONFIGURACAO = {
   enabled: ['core'],
   autoload: true,
-  registry: '@doutor/plugins',
+  registry: '@doutor/plugins'
 };
 
 /**
  * Configuração padrão de suporte a linguagens
  */
-export const DEFAULT_LANGUAGE_SUPPORT = {
+export const PADRAO_LANGUAGE_SUPORTE = {
   javascript: {
     enabled: true,
     parser: 'core',
     extensions: ['.js', '.jsx', '.mjs', '.cjs'],
-    features: ['babel', 'flow', 'jsx'],
+    features: ['babel', 'flow', 'jsx']
   },
   typescript: {
     enabled: true,
     parser: 'core',
     extensions: ['.ts', '.tsx'],
-    features: ['typescript', 'jsx', 'decorators'],
+    features: ['typescript', 'jsx', 'decorators']
   },
   html: {
     enabled: true,
     parser: 'core',
     extensions: ['.html', '.htm'],
-    features: ['html5', 'dom'],
+    features: ['html5', 'dom']
   },
   css: {
     enabled: true,
     parser: 'core',
     extensions: ['.css'],
-    features: ['css3', 'ast'],
+    features: ['css3', 'ast']
   },
   xml: {
     enabled: true,
     parser: 'core',
     extensions: ['.xml'],
-    features: ['xml', 'attributes'],
+    features: ['xml', 'attributes']
   },
   php: {
     enabled: true,
     parser: 'core',
     extensions: ['.php'],
-    features: ['heuristic', 'classes', 'functions'],
+    features: ['heuristic', 'classes', 'functions']
   },
   python: {
     enabled: true,
     parser: 'core',
     extensions: ['.py'],
-    features: ['heuristic', 'classes', 'functions'],
-  },
+    features: ['heuristic', 'classes', 'functions']
+  }
 };

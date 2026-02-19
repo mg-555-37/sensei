@@ -32,13 +32,7 @@ export interface AsyncIssuesArquivo {
 /**
  * Categoria de código para agrupamento
  */
-export type AsyncCategoria =
-  | 'cli'
-  | 'analistas'
-  | 'core'
-  | 'guardian'
-  | 'auto'
-  | 'outros';
+export type AsyncCategoria = 'cli' | 'analistas' | 'core' | 'guardian' | 'auto' | 'outros';
 
 /**
  * Estatísticas de uma categoria
@@ -75,7 +69,7 @@ export interface AsyncAnalysisReport {
   /** Total de arquivos afetados */
   totalFiles: number;
   /** Top arquivos mais problemáticos */
-  topFiles: AsyncArquivoRanqueado[];
+  topArquivos: AsyncArquivoRanqueado[];
   /** Estatísticas por categoria */
   categorias: Record<AsyncCategoria, AsyncCategoriaStats>;
   /** Recomendações priorizadas */

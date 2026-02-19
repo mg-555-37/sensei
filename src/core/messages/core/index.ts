@@ -4,72 +4,19 @@
  */
 
 // Correções (auto-fix, zeladores)
-export {
-  MENSAGENS_ARQUETIPOS_HANDLER,
-  MENSAGENS_AUTOFIX,
-  MENSAGENS_CORRECOES,
-  MENSAGENS_EXECUTOR,
-  MENSAGENS_FIX_TYPES,
-  MENSAGENS_PLUGINS,
-  MENSAGENS_RELATORIOS_ANALISE,
-} from './correcoes-messages.js';
+export { MENSAGENS_ARQUETIPOS_HANDLER, MENSAGENS_AUTOFIX, MENSAGENS_CORRECOES, MENSAGENS_EXECUTOR, MENSAGENS_CORRECAO_TIPOS, MENSAGENS_PLUGINS, MENSAGENS_RELATORIOS_ANALISE } from './correcoes-messages.js';
 
 // Diagnóstico
-export {
-  CABECALHOS,
-  formatarBlocoSugestoes,
-  formatarModoJson,
-  formatarResumoStats,
-  ICONES_DIAGNOSTICO,
-  MENSAGENS_ARQUETIPOS,
-  MENSAGENS_AVISO,
-  MENSAGENS_CONCLUSAO,
-  MENSAGENS_ERRO,
-  MENSAGENS_FILTROS,
-  MENSAGENS_GUARDIAN,
-  MENSAGENS_INICIO,
-  MENSAGENS_PROGRESSO,
-  MENSAGENS_STATS,
-  TEMPLATES_BLOCO,
-} from './diagnostico-messages.js';
+export { CABECALHOS, formatarBlocoSugestoes, formatarModoJson, formatarResumoStats, ICONES_DIAGNOSTICO, MENSAGENS_ARQUETIPOS, MENSAGENS_AVISO, MENSAGENS_CONCLUSAO, MENSAGENS_ERRO, MENSAGENS_FILTROS, MENSAGENS_GUARDIAN, MENSAGENS_INICIO, MENSAGENS_PROGRESSO, MENSAGENS_ESTATISTICAS, MODELOS_BLOCO } from './diagnostico-messages.js';
 
 // Exceções
-export { ExcecoesMessages } from './excecoes-messages.js';
+export { ExcecoesMensagens } from './excecoes-messages.js';
 
 // Fix-types (com aliases para evitar conflitos)
-export {
-  ACOES_SUGERIDAS,
-  CATEGORIAS_TIPOS,
-  DEBUG,
-  DICAS,
-  formatarComContexto,
-  formatarOcorrencia,
-  formatarSugestao,
-  formatarTipoInseguro,
-  gerarResumoCategoria,
-  ICONES as ICONES_FIX_TYPES,
-  MENSAGENS_CLI_FIX_TYPES,
-  MENSAGENS_ERRO as MENSAGENS_ERRO_FIX_TYPES,
-  MENSAGENS_INICIO as MENSAGENS_INICIO_FIX_TYPES,
-  MENSAGENS_PROGRESSO as MENSAGENS_PROGRESSO_FIX_TYPES,
-  MENSAGENS_RESUMO,
-  MENSAGENS_SUCESSO as MENSAGENS_SUCESSO_FIX_TYPES,
-  TEMPLATE_RESUMO_FINAL,
-  TEXTOS_CATEGORIZACAO_FIX_TYPES,
-} from './fix-types-messages.js';
+export { ACOES_SUGERIDAS, CATEGORIAS_TIPOS, DEPURACAO, DICAS, formatarComContexto, formatarOcorrencia, formatarSugestao, formatarTipoInseguro, gerarResumoCategoria, ICONES as ICONES_FIX_TYPES, MENSAGENS_CLI_CORRECAO_TIPOS, MENSAGENS_ERRO as MENSAGENS_ERRO_FIX_TYPES, MENSAGENS_INICIO as MENSAGENS_INICIO_FIX_TYPES, MENSAGENS_PROGRESSO as MENSAGENS_PROGRESSO_FIX_TYPES, MENSAGENS_RESUMO, MENSAGENS_SUCESSO as MENSAGENS_SUCESSO_FIX_TYPES, TEMPLATE_RESUMO_FINAL, TEXTOS_CATEGORIZACAO_CORRECAO_TIPOS } from './fix-types-messages.js';
 
 // Inquisidor
-export { InquisidorMessages } from './inquisidor-messages.js';
+export { InquisidorMensagens } from './inquisidor-messages.js';
 
 // Plugin (mensagens de analistas de plugins)
-export {
-  AnalystOrigins,
-  AnalystTypes,
-  CssMessages,
-  HtmlMessages,
-  PythonMessages,
-  ReactHooksMessages,
-  ReactMessages,
-  SeverityLevels,
-  TailwindMessages,
-} from './plugin-messages.js';
+export { AnalystOrigens, AnalystTipos, CssMensagens, HtmlMensagens, PythonMensagens, ReactHooksMensagens, ReactMensagens, SeverityNiveis, TailwindMensagens } from './plugin-messages.js';

@@ -5,9 +5,8 @@
 
 let spdxParse: any = null;
 let spdxCorrect: any = null;
-let spdxLicenseList: Record<string, any> | null = null;
+let spdxLicencaList: Record<string, any> | null = null;
 let spdxLoaded = false;
-
 async function tryLoadSpdx(): Promise<void> {
   if (spdxLoaded) return;
   spdxLoaded = true;
@@ -18,44 +17,48 @@ async function tryLoadSpdx(): Promise<void> {
     spdxCorrect = (await import('spdx-correct')).default || (await import('spdx-correct'));
   } catch {}
   try {
-    spdxLicenseList = (await import('spdx-license-list')).default || (await import('spdx-license-list'));
+    spdxLicencaList = (await import('spdx-license-list')).default || (await import('spdx-license-list'));
   } catch {}
 }
-
 function fallbackNormalize(raw: unknown): string {
   if (raw == null) return 'UNKNOWN';
-  if (Array.isArray(raw)) return raw.map((r) => fallbackNormalize(r)).join(' OR ');
+  if (Array.isArray(raw)) return raw.map(r => fallbackNormalize(r)).join(' OR ');
   if (typeof raw === 'object') {
     const anyObj = raw as Record<string, any>;
     return anyObj.type ? fallbackNormalize(anyObj.type) : 'UNKNOWN';
   }
-
   let s = String(raw).trim();
   s = s.replace(/\s+/g, ' ');
-  const map: Record<string, string> = { mit: 'MIT', isc: 'ISC', 'apache-2.0': 'Apache-2.0', apache: 'Apache-2.0', gpl: 'GPL', agpl: 'AGPL', lgpl: 'LGPL' };
+  const map: Record<string, string> = {
+    mit: 'MIT',
+    isc: 'ISC',
+    'apache-2.0': 'Apache-2.0',
+    apache: 'Apache-2.0',
+    gpl: 'GPL',
+    agpl: 'AGPL',
+    lgpl: 'LGPL'
+  };
   const parts = s.split(/\s+(OR|AND)\s+/i);
-  return parts
-    .map((p) => {
-      if (/^(OR|AND)$/i.test(p)) return p.toUpperCase();
-      const key = p.toLowerCase();
-      if (map[key]) return map[key];
-      let token = p.trim();
-      try {
-        if (spdxCorrect) token = spdxCorrect(token) || token;
-      } catch {}
-      try {
-        if (spdxLicenseList) {
-          const id = String(token).trim();
-          if (spdxLicenseList[id]) return id;
-          const matchId = Object.keys(spdxLicenseList).find((k) => k.toLowerCase() === String(token).toLowerCase());
-          if (matchId) return matchId;
-          const matchByName = Object.entries(spdxLicenseList).find(([, v]) => (v && v.name && String(v.name).toLowerCase() === String(token).toLowerCase()));
-          if (matchByName) return matchByName[0];
-        }
-      } catch {}
-      return token;
-    })
-    .join(' ');
+  return parts.map(p => {
+    if (/^(OR|AND)$/i.test(p)) return p.toUpperCase();
+    const key = p.toLowerCase();
+    if (map[key]) return map[key];
+    let token = p.trim();
+    try {
+      if (spdxCorrect) token = spdxCorrect(token) || token;
+    } catch {}
+    try {
+      if (spdxLicencaList) {
+        const id = String(token).trim();
+        if (spdxLicencaList[id]) return id;
+        const matchId = Object.keys(spdxLicencaList).find(k => k.toLowerCase() === String(token).toLowerCase());
+        if (matchId) return matchId;
+        const matchByNome = Object.entries(spdxLicencaList).find(([, v]) => v && v.name && String(v.name).toLowerCase() === String(token).toLowerCase());
+        if (matchByNome) return matchByNome[0];
+      }
+    } catch {}
+    return token;
+  }).join(' ');
 }
 
 /**
@@ -65,23 +68,19 @@ function fallbackNormalize(raw: unknown): string {
  */
 export async function normalizeLicense(raw: unknown): Promise<string> {
   await tryLoadSpdx();
-
   if (spdxParse && typeof raw === 'string' && /\b(OR|AND)\b/i.test(raw)) {
     return fallbackNormalize(raw);
   }
-
   if (spdxParse) {
     try {
-      if (Array.isArray(raw)) return raw.map((r) => awaitOrFallback(r)).join(' OR ');
+      if (Array.isArray(raw)) return raw.map(r => awaitOrFallback(r)).join(' OR ');
       if (typeof raw === 'object') raw = (raw as Record<string, any>).type || raw;
-
       return awaitOrFallback(raw);
     } catch {
       // fallthrough
     }
   }
   return fallbackNormalize(raw);
-
   function awaitOrFallback(value: unknown): string {
     try {
       const s = String(value).trim();
@@ -99,7 +98,6 @@ export async function normalizeLicense(raw: unknown): Promise<string> {
       return fallbackNormalize(value);
     }
   }
-
   function astToExpression(ast: any): string {
     if (!ast) return 'UNKNOWN';
     if (typeof ast === 'string') return ast;
@@ -110,5 +108,4 @@ export async function normalizeLicense(raw: unknown): Promise<string> {
     return JSON.stringify(ast);
   }
 }
-
 export default normalizeLicense;

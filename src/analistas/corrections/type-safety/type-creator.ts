@@ -6,23 +6,17 @@
 
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-
 import { buildTypesFsPath } from '@core/config/conventions.js';
-
 import type { ExistingType, TypeAnalysis } from '@';
-
 import { toKebabCase } from './context-analyzer.js';
 
 /**
  * Cria definição de tipo no diretório configurado (conventions.typesDirectory)
  */
-export async function createTypeDefinition(
-  analysis: TypeAnalysis,
-  sourceFilePath: string,
-): Promise<string> {
+export async function createTypeDefinition(analysis: TypeAnalysis, sourceFilePath: string): Promise<string> {
   const domain = extractDomain(sourceFilePath);
-  const fileName = toKebabCase(analysis.typeName);
-  const typePath = buildTypesFsPath(path.posix.join(domain, `${fileName}.ts`));
+  const fileNome = toKebabCase(analysis.typeName);
+  const typeCaminho = buildTypesFsPath(path.posix.join(domain, `${fileNome}.ts`));
 
   // Verificar se tipo já existe
   const existing = await findExistingType(analysis.typeName);
@@ -32,17 +26,19 @@ export async function createTypeDefinition(
   }
 
   // Criar diretório se não existir
-  const dir = path.dirname(typePath);
-  await fs.mkdir(dir, { recursive: true });
+  const dir = path.dirname(typeCaminho);
+  await fs.mkdir(dir, {
+    recursive: true
+  });
 
   // Gerar conteúdo do arquivo
   const content = generateTypeFileContent(analysis, sourceFilePath);
 
   // Escrever arquivo
-  await fs.writeFile(typePath, content, 'utf-8');
+  await fs.writeFile(typeCaminho, content, 'utf-8');
 
   // Adicionar export ao index.ts do domínio
-  await addExportToIndex(domain, fileName);
+  await addExportToIndex(domain, fileNome);
 
   // Retornar alias de import
   return `@types/types`;
@@ -51,19 +47,15 @@ export async function createTypeDefinition(
 /**
  * Busca tipo existente no diretório configurado (conventions.typesDirectory)
  */
-export async function findExistingType(
-  typeName: string,
-): Promise<ExistingType | null> {
+export async function findExistingType(typeName: string): Promise<ExistingType | null> {
   try {
     const tiposDir = buildTypesFsPath('');
     const types = await scanTypesDirectory(tiposDir);
-
     for (const type of types) {
       if (type.name === typeName) {
         return type;
       }
     }
-
     return null;
   } catch {
     return null;
@@ -82,12 +74,8 @@ export function isSameType(type1: ExistingType, type2: string): boolean {
 /**
  * Gera conteúdo do arquivo de tipo
  */
-function generateTypeFileContent(
-  analysis: TypeAnalysis,
-  sourceFilePath: string,
-): string {
+function generateTypeFileContent(analysis: TypeAnalysis, sourceFilePath: string): string {
   const date = new Date().toISOString();
-
   return `// SPDX-License-Identifier: MIT
 /**
  * Tipo gerado automaticamente
@@ -105,27 +93,23 @@ ${analysis.typeDefinition}
 /**
  * Adiciona export ao index.ts do domínio
  */
-async function addExportToIndex(
-  domain: string,
-  fileName: string,
-): Promise<void> {
-  const indexPath = buildTypesFsPath(path.posix.join(domain, 'index.ts'));
-
+async function addExportToIndex(domain: string, fileNome: string): Promise<void> {
+  const indexCaminho = buildTypesFsPath(path.posix.join(domain, 'index.ts'));
   try {
     // Verificar se arquivo index.ts existe
-    await fs.access(indexPath);
+    await fs.access(indexCaminho);
 
     // Ler conteúdo atual
-    const content = await fs.readFile(indexPath, 'utf-8');
+    const content = await fs.readFile(indexCaminho, 'utf-8');
 
     // Verificar se export já existe
-    const exportStatement = `export * from './${fileName}.js';`;
+    const exportStatement = `export * from './${fileNome}.js';`;
     if (content.includes(exportStatement)) {
       return; // Já existe
     }
 
     // Adicionar export
-    await fs.appendFile(indexPath, `${exportStatement}\n`, 'utf-8');
+    await fs.appendFile(indexCaminho, `${exportStatement}\n`, 'utf-8');
   } catch {
     // Criar index.ts se não existir
     const header = `// SPDX-License-Identifier: MIT
@@ -134,16 +118,16 @@ async function addExportToIndex(
  */
 
 `;
-    const exportStatement = `export * from './${fileName}.js';\n`;
-    await fs.writeFile(indexPath, header + exportStatement, 'utf-8');
+    const exportStatement = `export * from './${fileNome}.js';\n`;
+    await fs.writeFile(indexCaminho, header + exportStatement, 'utf-8');
   }
 }
 
 /**
  * Extrai domínio do caminho do arquivo
  */
-function extractDomain(filePath: string): string {
-  const match = filePath.match(/src[\\/]([\w-]+)[\\/]/);
+function extractDomain(fileCaminho: string): string {
+  const match = fileCaminho.match(/src[\\/]([\w-]+)[\\/]/);
   return match ? match[1] : 'shared';
 }
 
@@ -152,54 +136,48 @@ function extractDomain(filePath: string): string {
  */
 async function scanTypesDirectory(dir: string): Promise<ExistingType[]> {
   const types: ExistingType[] = [];
-
   try {
-    const entries = await fs.readdir(dir, { withFileTypes: true });
-
+    const entries = await fs.readdir(dir, {
+      withFileTypes: true
+    });
     for (const entry of entries) {
-      const fullPath = path.join(dir, entry.name);
-
+      const fullCaminho = path.join(dir, entry.name);
       if (entry.isDirectory()) {
         // Recursivo
-        const subTypes = await scanTypesDirectory(fullPath);
-        types.push(...subTypes);
+        const subTipos = await scanTypesDirectory(fullCaminho);
+        types.push(...subTipos);
       } else if (entry.name.endsWith('.ts') && entry.name !== 'index.ts') {
         // Ler arquivo e extrair tipos
-        const content = await fs.readFile(fullPath, 'utf-8');
-        const extractedTypes = extractTypesFromFile(content, fullPath);
-        types.push(...extractedTypes);
+        const content = await fs.readFile(fullCaminho, 'utf-8');
+        const extractedTipos = extractTypesFromFile(content, fullCaminho);
+        types.push(...extractedTipos);
       }
     }
   } catch {
     // Ignorar erros
   }
-
   return types;
 }
 
 /**
  * Extrai tipos de um arquivo
  */
-function extractTypesFromFile(
-  content: string,
-  filePath: string,
-): ExistingType[] {
+function extractTypesFromFile(content: string, fileCaminho: string): ExistingType[] {
   const types: ExistingType[] = [];
 
   // Regex simples para encontrar interfaces e types exportados
   const interfaceRegex = /export\s+interface\s+(\w+)\s*{([^}]*)}/g;
   const typeRegex = /export\s+type\s+(\w+)\s*=\s*([^;]+);/g;
-
   let match;
 
   // Interfaces
   while ((match = interfaceRegex.exec(content)) !== null) {
     types.push({
       name: match[1],
-      path: filePath,
+      path: fileCaminho,
       definition: match[0],
       isExported: true,
-      domain: extractDomain(filePath),
+      domain: extractDomain(fileCaminho)
     });
   }
 
@@ -207,12 +185,11 @@ function extractTypesFromFile(
   while ((match = typeRegex.exec(content)) !== null) {
     types.push({
       name: match[1],
-      path: filePath,
+      path: fileCaminho,
       definition: match[0],
       isExported: true,
-      domain: extractDomain(filePath),
+      domain: extractDomain(fileCaminho)
     });
   }
-
   return types;
 }

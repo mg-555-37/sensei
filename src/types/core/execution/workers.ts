@@ -40,7 +40,7 @@ export interface WorkerResult {
   workerId: number;
   occurrences: Ocorrencia[];
   metrics: MetricaAnalista[];
-  processedFiles: number;
+  processedArquivos: number;
   errors: string[];
   duration: number;
 }

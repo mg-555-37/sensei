@@ -1,28 +1,10 @@
 // SPDX-License-Identifier: MIT
-import type {
-  ClassDeclaration,
-  ImportDeclaration,
-  Program,
-  Statement,
-  TSEnumDeclaration,
-  TSInterfaceDeclaration,
-  TSTypeAliasDeclaration,
-  VariableDeclaration,
-} from '@babel/types';
-
-import type {
-  ArquetipoEstruturaDef,
-  FileEntryWithAst,
-  PackageJson,
-  ResultadoDeteccaoArquetipo,
-  SinaisProjetoAvancados,
-} from '@';
-
-export function scoreArquetipo(
-  def: ArquetipoEstruturaDef,
-  _arquivos: string[], // prefixo _ para ignorar warning de unused
-  _sinaisAvancados?: SinaisProjetoAvancados, // prefixo _ para ignorar warning de unused
-): ResultadoDeteccaoArquetipo {
+import type { ClassDeclaration, ImportDeclaration, Program, Statement, TSEnumDeclaration, TSInterfaceDeclaration, TSTypeAliasDeclaration, VariableDeclaration } from '@babel/types';
+import type { ArquetipoEstruturaDef, FileEntryWithAst, PackageJson, ResultadoDeteccaoArquetipo, SinaisProjetoAvancados } from '@';
+export function scoreArquetipo(def: ArquetipoEstruturaDef, _arquivos: string[],
+// prefixo _ para ignorar warning de unused
+_sinaisAvancados // prefixo _ para ignorar warning de unused
+?: SinaisProjetoAvancados): ResultadoDeteccaoArquetipo {
   // Implementação fictícia para evitar erro de compilação
   return {
     nome: def.nome,
@@ -33,29 +15,24 @@ export function scoreArquetipo(
     missingRequired: [],
     matchedOptional: [],
     dependencyMatches: [],
-    filePatternMatches: [],
+    filePadraoMatches: [],
     forbiddenPresent: [],
-    anomalias: [],
+    anomalias: []
   };
 }
-
-export function extrairSinaisAvancados(
-  fileEntries: FileEntryWithAst[],
-  packageJson?: PackageJson,
-  _p0?: unknown,
-  _baseDir?: string,
-  _arquivos?: string[],
-): SinaisProjetoAvancados {
+export function extrairSinaisAvancados(fileEntries: FileEntryWithAst[], packageJson?: PackageJson, _p0?: unknown, _baseDir?: string, _arquivos?: string[]): SinaisProjetoAvancados {
   // Auxiliar para checar se o nó possui id.name string
-  const hasIdName = (node: unknown): node is { id: { name: string } } => {
-    return (
-      typeof node === 'object' &&
-      node !== null &&
-      'id' in node &&
-      typeof (node as { id?: { name?: unknown } }).id?.name === 'string'
-    );
+  const hasIdNome = (node: unknown): node is {
+    id: {
+      name: string;
+    };
+  } => {
+    return typeof node === 'object' && node !== null && 'id' in node && typeof (node as {
+      id?: {
+        name?: unknown;
+      };
+    }).id?.name === 'string';
   };
-
   const sinais: SinaisProjetoAvancados = {
     funcoes: 0,
     imports: [],
@@ -67,27 +44,20 @@ export function extrairSinaisAvancados(
     scripts: [],
     pastasPadrao: [],
     arquivosPadrao: [],
-    arquivosConfig: [],
+    arquivosConfiguracao: [],
     // Novos sinais inteligentes
     padroesArquiteturais: [],
     tecnologiasDominantes: [],
     complexidadeEstrutura: 'baixa',
-    tipoDominante: 'desconhecido',
+    tipoDominante: 'desconhecido'
   };
 
   // Análise de padrões arquiteturais baseada no código
   const padroesDetectados = new Set<string>();
   const tecnologias = new Map<string, number>();
-
   for (const fe of fileEntries) {
     let body: Statement[] = [];
-    if (
-      fe.ast &&
-      'node' in fe.ast &&
-      fe.ast.node &&
-      (fe.ast.node as Program).type === 'Program' &&
-      Array.isArray((fe.ast.node as Program).body)
-    ) {
+    if (fe.ast && 'node' in fe.ast && fe.ast.node && (fe.ast.node as Program).type === 'Program' && Array.isArray((fe.ast.node as Program).body)) {
       body = (fe.ast.node as Program).body;
     }
 
@@ -96,11 +66,7 @@ export function extrairSinaisAvancados(
     const relPath = fe.relPath.toLowerCase();
 
     // Detectar padrões MVC
-    if (
-      relPath.includes('controller') ||
-      relPath.includes('model') ||
-      relPath.includes('view')
-    ) {
+    if (relPath.includes('controller') || relPath.includes('model') || relPath.includes('view')) {
       padroesDetectados.add('mvc');
     }
 
@@ -121,62 +87,29 @@ export function extrairSinaisAvancados(
 
     // Detectar TypeScript advanced features
     if (conteudo.includes('interface') || conteudo.includes('type ')) {
-      tecnologias.set(
-        'typescript-advanced',
-        (tecnologias.get('typescript-advanced') || 0) + 1,
-      );
+      tecnologias.set('typescript-advanced', (tecnologias.get('typescript-advanced') || 0) + 1);
     }
 
     // Detectar padrões de CLI
-    if (
-      conteudo.includes('commander') ||
-      conteudo.includes('yargs') ||
-      relPath.includes('bin/')
-    ) {
+    if (conteudo.includes('commander') || conteudo.includes('yargs') || relPath.includes('bin/')) {
       padroesDetectados.add('cli-patterns');
     }
 
     // Funções
-    sinais.funcoes += body.filter(
-      (n): n is import('@babel/types').FunctionDeclaration =>
-        n.type === 'FunctionDeclaration',
-    ).length;
+    sinais.funcoes += body.filter((n): n is import('@babel/types').FunctionDeclaration => n.type === 'FunctionDeclaration').length;
 
     // Imports
-    const imports = body.filter(
-      (n): n is ImportDeclaration => n.type === 'ImportDeclaration',
-    );
-    sinais.imports.push(...imports.map((i) => i.source.value));
+    const imports = body.filter((n): n is ImportDeclaration => n.type === 'ImportDeclaration');
+    sinais.imports.push(...imports.map(i => i.source.value));
 
     // Variáveis
-    sinais.variaveis += body.filter(
-      (n): n is VariableDeclaration => n.type === 'VariableDeclaration',
-    ).length;
+    sinais.variaveis += body.filter((n): n is VariableDeclaration => n.type === 'VariableDeclaration').length;
 
     // Tipos (TypeScript)
-    sinais.tipos.push(
-      ...body
-        .filter(
-          (
-            n,
-          ): n is
-            | TSTypeAliasDeclaration
-            | TSInterfaceDeclaration
-            | TSEnumDeclaration =>
-            [
-              'TSTypeAliasDeclaration',
-              'TSInterfaceDeclaration',
-              'TSEnumDeclaration',
-            ].includes(n.type),
-        )
-        .map((n) => (hasIdName(n) ? n.id.name : undefined))
-        .filter((v): v is string => typeof v === 'string'),
-    );
+    sinais.tipos.push(...body.filter((n): n is TSTypeAliasDeclaration | TSInterfaceDeclaration | TSEnumDeclaration => ['TSTypeAliasDeclaration', 'TSInterfaceDeclaration', 'TSEnumDeclaration'].includes(n.type)).map(n => hasIdNome(n) ? n.id.name : undefined).filter((v): v is string => typeof v === 'string'));
 
     // Classes
-    sinais.classes += body.filter(
-      (n): n is ClassDeclaration => n.type === 'ClassDeclaration',
-    ).length;
+    sinais.classes += body.filter((n): n is ClassDeclaration => n.type === 'ClassDeclaration').length;
 
     // Frameworks por import (expandido)
     for (const i of imports) {
@@ -184,54 +117,27 @@ export function extrairSinaisAvancados(
         const importSource = i.source.value.toLowerCase();
 
         // Frameworks web
-        if (
-          importSource.includes('react') ||
-          importSource.includes('vue') ||
-          importSource.includes('angular')
-        ) {
-          tecnologias.set(
-            'frontend-framework',
-            (tecnologias.get('frontend-framework') || 0) + 1,
-          );
+        if (importSource.includes('react') || importSource.includes('vue') || importSource.includes('angular')) {
+          tecnologias.set('frontend-framework', (tecnologias.get('frontend-framework') || 0) + 1);
         }
 
         // Frameworks backend
-        if (
-          importSource.includes('express') ||
-          importSource.includes('fastify') ||
-          importSource.includes('nestjs')
-        ) {
-          tecnologias.set(
-            'backend-framework',
-            (tecnologias.get('backend-framework') || 0) + 1,
-          );
+        if (importSource.includes('express') || importSource.includes('fastify') || importSource.includes('nestjs')) {
+          tecnologias.set('backend-framework', (tecnologias.get('backend-framework') || 0) + 1);
         }
 
         // ORMs
-        if (
-          importSource.includes('prisma') ||
-          importSource.includes('mongoose') ||
-          importSource.includes('typeorm')
-        ) {
+        if (importSource.includes('prisma') || importSource.includes('mongoose') || importSource.includes('typeorm')) {
           tecnologias.set('orm', (tecnologias.get('orm') || 0) + 1);
         }
 
         // Testing
-        if (
-          importSource.includes('jest') ||
-          importSource.includes('vitest') ||
-          importSource.includes('mocha')
-        ) {
-          tecnologias.set(
-            'testing-framework',
-            (tecnologias.get('testing-framework') || 0) + 1,
-          );
+        if (importSource.includes('jest') || importSource.includes('vitest') || importSource.includes('mocha')) {
+          tecnologias.set('testing-framework', (tecnologias.get('testing-framework') || 0) + 1);
         }
 
         // Lista original mantida
-        if (
-          /express|react|next|electron|discord\.js|telegraf/.test(importSource)
-        ) {
+        if (/express|react|next|electron|discord\.js|telegraf/.test(importSource)) {
           sinais.frameworksDetectados.push(i.source.value);
         }
       }
@@ -239,24 +145,14 @@ export function extrairSinaisAvancados(
 
     // Padrões de pastas/arquivos (expandido)
     const rel = fe.relPath.replace(/\\/g, '/');
-    if (
-      /src\/controllers|pages|api|prisma|packages|apps|src\/routes|src\/services|src\/repositories/.test(
-        rel,
-      )
-    ) {
+    if (/src\/controllers|pages|api|prisma|packages|apps|src\/routes|src\/services|src\/repositories/.test(rel)) {
       sinais.pastasPadrao.push(rel);
     }
-    if (
-      /main\.js|index\.ts|bot\.ts|electron\.js|server\.js|app\.js/.test(rel)
-    ) {
+    if (/main\.js|index\.ts|bot\.ts|electron\.js|server\.js|app\.js/.test(rel)) {
       sinais.arquivosPadrao.push(rel);
     }
-    if (
-      /tsconfig\.json|turbo\.json|pnpm-workspace\.yaml|webpack\.config|rollup\.config|vite\.config/.test(
-        rel,
-      )
-    ) {
-      sinais.arquivosConfig.push(rel);
+    if (/tsconfig\.json|turbo\.json|pnpm-workspace\.yaml|webpack\.config|rollup\.config|vite\.config/.test(rel)) {
+      sinais.arquivosConfiguracao.push(rel);
     }
   }
 
@@ -264,11 +160,11 @@ export function extrairSinaisAvancados(
   sinais.padroesArquiteturais = Array.from(padroesDetectados);
 
   // Determinar tecnologia dominante
-  let maxCount = 0;
+  let maxContagem = 0;
   let dominante = 'desconhecido';
   for (const [tech, count] of tecnologias) {
-    if (count > maxCount) {
-      maxCount = count;
+    if (count > maxContagem) {
+      maxContagem = count;
       dominante = tech;
     }
   }
@@ -277,10 +173,7 @@ export function extrairSinaisAvancados(
 
   // Determinar complexidade da estrutura
   const totalArquivos = fileEntries.length;
-  const totalPastas = new Set(
-    fileEntries.map((fe) => fe.relPath.split('/').slice(0, -1).join('/')),
-  ).size;
-
+  const totalPastas = new Set(fileEntries.map(fe => fe.relPath.split('/').slice(0, -1).join('/'))).size;
   if (totalArquivos > 100 || totalPastas > 20) {
     sinais.complexidadeEstrutura = 'alta';
   } else if (totalArquivos > 50 || totalPastas > 10) {
@@ -297,13 +190,10 @@ export function extrairSinaisAvancados(
 
   // Normaliza arrays
   sinais.imports = Array.from(new Set(sinais.imports));
-  sinais.frameworksDetectados = Array.from(
-    new Set(sinais.frameworksDetectados),
-  );
+  sinais.frameworksDetectados = Array.from(new Set(sinais.frameworksDetectados));
   sinais.pastasPadrao = Array.from(new Set(sinais.pastasPadrao));
   sinais.arquivosPadrao = Array.from(new Set(sinais.arquivosPadrao));
-  sinais.arquivosConfig = Array.from(new Set(sinais.arquivosConfig));
+  sinais.arquivosConfiguracao = Array.from(new Set(sinais.arquivosConfiguracao));
   sinais.tipos = Array.from(new Set(sinais.tipos));
-
   return sinais;
 }

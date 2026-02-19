@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 import path from 'node:path';
-
-import { ExcecoesMessages } from '@core/messages/core/excecoes-messages.js';
-
+import { ExcecoesMensagens } from '@core/messages/core/excecoes-messages.js';
 import type { ErroValidacaoCombinacao } from '@';
 
 // Re-exporta o tipo para compatibilidade
@@ -16,29 +14,32 @@ export function normalizePath(p: string): string {
 
   // Assegurar que o caminho permanece dentro da CWD
   if (!resolved.startsWith(cwd)) {
-    throw new Error(ExcecoesMessages.caminhoForaDaCwdNaoPermitido(p));
+    throw new Error(ExcecoesMensagens.caminhoForaDaCwdNaoPermitido(p));
   }
-
   return normalized;
 }
 
 /** Valida se um caminho de arquivo é seguro para operações de leitura/escrita */
-export function isPathSafe(filePath: string): boolean {
+export function isPathSafe(fileCaminho: string): boolean {
   try {
-    const normalized = normalizePath(filePath);
+    const normalized = normalizePath(fileCaminho);
 
     // Verificar padrões perigosos
-    const dangerousPatterns = [
-      /\.\./, // Directory traversal
-      /^\/etc\//, // System directories
-      /^\/root\//, // Root directory
-      /^\/sys\//, // System files
-      /^\/proc\//, // Process files
-      /^C:\\Windows\\/i, // Windows system directory
-      /^C:\\System32\\/i, // Windows system32
+    const dangerousPadroes = [/\.\./,
+    // Directory traversal
+    /^\/etc\//,
+    // System directories
+    /^\/root\//,
+    // Root directory
+    /^\/sys\//,
+    // System files
+    /^\/proc\//,
+    // Process files
+    /^C:\\Windows\\/i,
+    // Windows system directory
+    /^C:\\System32\\/i // Windows system32
     ];
-
-    return !dangerousPatterns.some((pattern) => pattern.test(normalized));
+    return !dangerousPadroes.some(pattern => pattern.test(normalized));
   } catch {
     return false;
   }
@@ -54,25 +55,20 @@ export function isFilenameSafe(filename: string): boolean {
   if (invalidChars.test(filename)) return false;
 
   // Nomes reservados no Windows
-  const reservedNames = /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\.|$)/i;
-  if (reservedNames.test(filename)) return false;
-
+  const reservedNomes = /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\.|$)/i;
+  if (reservedNomes.test(filename)) return false;
   return true;
 }
 
 /** Sanitiza um nome de arquivo removendo caracteres perigosos */
 export function sanitizeFilename(filename: string): string {
-  return filename
-    .replace(/[<>:"|?*\x00-\x1f]/g, '_')
-    .replace(/^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\.|$)/i, 'file_$1$2')
-    .slice(0, 255);
+  return filename.replace(/[<>:"|?*\x00-\x1f]/g, '_').replace(/^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\.|$)/i, 'file_$1$2').slice(0, 255);
 }
 
 /** Valida se uma string representa um caminho relativo válido */
 export function isRelativePathValid(relativePath: string): boolean {
   if (!relativePath) return false;
   if (path.isAbsolute(relativePath)) return false;
-
   const normalized = path.normalize(relativePath);
   return !normalized.startsWith('..');
 }
@@ -84,10 +80,7 @@ export function getFileExtension(filename: string): string {
 }
 
 /** Verifica se uma extensão está na lista de extensões permitidas */
-export function isExtensionAllowed(
-  filename: string,
-  allowedExtensions: string[],
-): boolean {
+export function isExtensionAllowed(filename: string, allowedExtensions: string[]): boolean {
   const ext = getFileExtension(filename);
   return allowedExtensions.includes(ext);
 }
@@ -98,10 +91,7 @@ export function normalizarPathLocal(p: string): string {
 }
 
 /** Valida se um valor é um número positivo */
-export function validarNumeroPositivo(
-  v: unknown,
-  _nome: string,
-): number | null {
+export function validarNumeroPositivo(v: unknown, _nome: string): number | null {
   if (typeof v === 'number' && v > 0) return v;
   if (typeof v === 'string') {
     const num = Number.parseFloat(v);
@@ -111,15 +101,12 @@ export function validarNumeroPositivo(
 }
 
 /** Regras simples de combinação de flags globais. Expandir conforme novos casos. */
-export function validarCombinacoes(
-  flags: Record<string, unknown>,
-): ErroValidacaoCombinacao[] {
+export function validarCombinacoes(flags: Record<string, unknown>): ErroValidacaoCombinacao[] {
   const erros: ErroValidacaoCombinacao[] = [];
   if (flags.scanOnly && flags.incremental) {
     erros.push({
       codigo: 'SCAN_INCREMENTAL',
-      mensagem:
-        'Não combinar --scan-only com --incremental (incremental exige AST).',
+      mensagem: 'Não combinar --scan-only com --incremental (incremental exige AST).'
     });
   }
   return erros;
@@ -133,7 +120,7 @@ export function validarCombinacoes(
 export function sanitizarFlags(flags: Record<string, unknown>): void {
   const erros = validarCombinacoes(flags);
   if (erros.length) {
-    const detalhe = erros.map((e) => `${e.codigo}: ${e.mensagem}`).join('; ');
+    const detalhe = erros.map(e => `${e.codigo}: ${e.mensagem}`).join('; ');
     throw new Error(detalhe);
   }
 }

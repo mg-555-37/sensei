@@ -1,14 +1,7 @@
 // SPDX-License-Identifier: MIT
-import { ExcecoesMessages } from '@core/messages/core/excecoes-messages.js';
+import { ExcecoesMensagens } from '@core/messages/core/excecoes-messages.js';
 import { log, logCore } from '@core/messages/index.js';
-
-import type {
-  GlobalComImport,
-  ImportDinamico,
-  LanguageSupport,
-  ParserPlugin,
-  PluginConfig,
-} from '@';
+import type { GlobalComImport, ImportDinamico, LanguageSupport, ParserPlugin, PluginConfig } from '@';
 
 /**
  * Registry centralizado para gerenciamento de plugins de parser
@@ -21,16 +14,12 @@ export class PluginRegistry {
   private userConfiguredEnabled = false;
   private languageSupport: Record<string, LanguageSupport>;
   private loadingPromises = new Map<string, Promise<ParserPlugin>>();
-
-  constructor(
-    config?: PluginConfig,
-    languageSupport?: Record<string, LanguageSupport>,
-  ) {
+  constructor(config?: PluginConfig, languageSupport?: Record<string, LanguageSupport>) {
     this.config = {
       enabled: ['core'],
       autoload: true,
       registry: '@doutor/plugins',
-      ...config,
+      ...config
     };
     this.userConfiguredEnabled = !!config?.enabled;
     this.languageSupport = languageSupport || {};
@@ -52,16 +41,11 @@ export class PluginRegistry {
     for (const ext of plugin.extensions) {
       if (this.extensionMap.has(ext)) {
         const existing = this.extensionMap.get(ext);
-        log.debug(
-          `⚠️ Extensão ${ext} já mapeada para plugin ${existing}, sobrescrevendo com ${plugin.name}`,
-        );
+        log.debug(`⚠️ Extensão ${ext} já mapeada para plugin ${existing}, sobrescrevendo com ${plugin.name}`);
       }
       this.extensionMap.set(ext, plugin.name);
     }
-
-    log.debug(
-      `✅ Plugin ${plugin.name} registrado com extensões: ${plugin.extensions.join(', ')}`,
-    );
+    log.debug(`✅ Plugin ${plugin.name} registrado com extensões: ${plugin.extensions.join(', ')}`);
   }
 
   /**
@@ -72,9 +56,7 @@ export class PluginRegistry {
     if (this.plugins.has(name)) {
       const plugin = this.plugins.get(name);
       if (!plugin) {
-        throw new Error(
-          ExcecoesMessages.pluginRegistradoNaoPodeSerObtido(name),
-        );
+        throw new Error(ExcecoesMensagens.pluginRegistradoNaoPodeSerObtido(name));
       }
       return plugin;
     }
@@ -86,9 +68,7 @@ export class PluginRegistry {
     if (this.loadingPromises.has(name)) {
       const promise = this.loadingPromises.get(name);
       if (!promise) {
-        throw new Error(
-          ExcecoesMessages.pluginCarregandoPromiseNaoPodeSerObtida(name),
-        );
+        throw new Error(ExcecoesMensagens.pluginCarregandoPromiseNaoPodeSerObtida(name));
       }
       return promise;
     }
@@ -96,7 +76,6 @@ export class PluginRegistry {
     // Cria nova promise de loading
     const loadingPromise = this.doLoadPlugin(name);
     this.loadingPromises.set(name, loadingPromise);
-
     try {
       const plugin = await loadingPromise;
       this.loadingPromises.delete(name);
@@ -112,32 +91,21 @@ export class PluginRegistry {
    */
   private async doLoadPlugin(name: string): Promise<ParserPlugin> {
     log.debug(`📦 Carregando plugin: ${name}`);
-
     try {
       // Tenta carregar do registry configurado
-      const pluginPath = `${this.config.registry}/${name}-plugin`;
+      const pluginCaminho = `${this.config.registry}/${name}-plugin`;
       // Usa import dinâmico mockável (globalThis.import pode ser substituído nos testes)
-      const dynImport: ImportDinamico =
-        (globalThis as GlobalComImport).import || ((p: string) => import(p));
-      const pluginModule = await dynImport(pluginPath);
-
-      const plugin: ParserPlugin =
-        ((pluginModule as Record<string, unknown>).default as ParserPlugin) ||
-        (pluginModule as ParserPlugin);
+      const dynImport: ImportDinamico = (globalThis as GlobalComImport).import || ((p: string) => import(p));
+      const pluginModule = await dynImport(pluginCaminho);
+      const plugin: ParserPlugin = (pluginModule as Record<string, unknown>).default as ParserPlugin || pluginModule as ParserPlugin;
 
       // Valida e registra
       this.validatePlugin(plugin);
       this.registerPlugin(plugin);
-
       return plugin;
     } catch (error) {
       logCore.erroCarregarPlugin(name, (error as Error).message);
-      throw new Error(
-        ExcecoesMessages.naoFoiPossivelCarregarPlugin(
-          name,
-          (error as Error).message,
-        ),
-      );
+      throw new Error(ExcecoesMensagens.naoFoiPossivelCarregarPlugin(name, (error as Error).message));
     }
   }
 
@@ -145,18 +113,17 @@ export class PluginRegistry {
    * Obtém plugin por extensão de arquivo
    */
   async getPluginForExtension(extension: string): Promise<ParserPlugin | null> {
-    const pluginName = this.extensionMap.get(extension);
-
-    if (!pluginName) {
+    const pluginNome = this.extensionMap.get(extension);
+    if (!pluginNome) {
       if (this.config.autoload) {
         logCore.tentandoAutoload(extension);
         // Tenta inferir nome do plugin pela extensão
-        const inferredName = this.inferPluginName(extension);
-        if (inferredName && this.config.enabled.includes(inferredName)) {
+        const inferredNome = this.inferPluginName(extension);
+        if (inferredNome && this.config.enabled.includes(inferredNome)) {
           try {
-            return await this.loadPlugin(inferredName);
+            return await this.loadPlugin(inferredNome);
           } catch {
-            logCore.autoloadFalhou(inferredName);
+            logCore.autoloadFalhou(inferredNome);
           }
         }
       }
@@ -166,25 +133,19 @@ export class PluginRegistry {
     // Verifica se o plugin está habilitado
     // Regra: se o usuário NÃO configurou a lista 'enabled', tratamos todos os plugins registrados como habilitados por padrão.
     // Só aplicamos o gate includes() quando houve configuração explícita de 'enabled'.
-    if (
-      this.userConfiguredEnabled &&
-      !this.config.enabled.includes(pluginName)
-    ) {
-      log.debug(
-        `🚫 Plugin ${pluginName} está desabilitado para extensão ${extension}`,
-      );
+    if (this.userConfiguredEnabled && !this.config.enabled.includes(pluginNome)) {
+      log.debug(`🚫 Plugin ${pluginNome} está desabilitado para extensão ${extension}`);
       return null;
     }
 
     // Verifica suporte da linguagem
-    const langKey = extension.substring(1); // remove o ponto
-    const langSupport = this.languageSupport[langKey];
-    if (langSupport && !langSupport.enabled) {
-      log.debug(`🚫 Suporte à linguagem ${langKey} está desabilitado`);
+    const langChave = extension.substring(1); // remove o ponto
+    const langSuporte = this.languageSupport[langChave];
+    if (langSuporte && !langSuporte.enabled) {
+      log.debug(`🚫 Suporte à linguagem ${langChave} está desabilitado`);
       return null;
     }
-
-    return await this.loadPlugin(pluginName);
+    return await this.loadPlugin(pluginNome);
   }
 
   /**
@@ -192,20 +153,23 @@ export class PluginRegistry {
    */
   private inferPluginName(extension: string): string | null {
     const extMap: Record<string, string> = {
-      '.xml': 'core', // XML fica no core
-      '.html': 'core', // HTML fica no core
+      '.xml': 'core',
+      // XML fica no core
+      '.html': 'core',
+      // HTML fica no core
       '.htm': 'core',
-      '.css': 'core', // CSS fica no core
+      '.css': 'core',
+      // CSS fica no core
       '.js': 'core',
       '.jsx': 'core',
       '.ts': 'core',
       '.tsx': 'core',
       '.mjs': 'core',
       '.cjs': 'core',
-      '.php': 'core', // PHP fica no core
-      '.py': 'core', // Python fica no core
+      '.php': 'core',
+      // PHP fica no core
+      '.py': 'core' // Python fica no core
     };
-
     return extMap[extension] || null;
   }
 
@@ -214,19 +178,16 @@ export class PluginRegistry {
    */
   private validatePlugin(plugin: ParserPlugin): void {
     if (!plugin.name || typeof plugin.name !== 'string') {
-      throw new Error(ExcecoesMessages.pluginDeveTerNomeValido);
+      throw new Error(ExcecoesMensagens.pluginDeveTerNomeValido);
     }
-
     if (!plugin.version || typeof plugin.version !== 'string') {
-      throw new Error(ExcecoesMessages.pluginDeveTerVersaoValida);
+      throw new Error(ExcecoesMensagens.pluginDeveTerVersaoValida);
     }
-
     if (!Array.isArray(plugin.extensions) || plugin.extensions.length === 0) {
-      throw new Error(ExcecoesMessages.pluginDeveDefinirPeloMenosUmaExtensao);
+      throw new Error(ExcecoesMensagens.pluginDeveDefinirPeloMenosUmaExtensao);
     }
-
     if (typeof plugin.parse !== 'function') {
-      throw new Error(ExcecoesMessages.pluginDeveImplementarMetodoParse);
+      throw new Error(ExcecoesMensagens.pluginDeveImplementarMetodoParse);
     }
   }
 
@@ -257,7 +218,7 @@ export class PluginRegistry {
       pluginsRegistrados: this.plugins.size,
       extensoesSuportadas: this.extensionMap.size,
       pluginsHabilitados: this.config.enabled.length,
-      autoloadAtivo: this.config.autoload,
+      autoloadAtivo: this.config.autoload
     };
   }
 
@@ -265,7 +226,10 @@ export class PluginRegistry {
    * Atualiza configuração do registry
    */
   updateConfig(newConfig: Partial<PluginConfig>): void {
-    this.config = { ...this.config, ...newConfig };
+    this.config = {
+      ...this.config,
+      ...newConfig
+    };
     if (Object.prototype.hasOwnProperty.call(newConfig, 'enabled')) {
       this.userConfiguredEnabled = true;
     }
@@ -276,7 +240,10 @@ export class PluginRegistry {
    * Atualiza suporte a linguagens
    */
   updateLanguageSupport(newSupport: Record<string, LanguageSupport>): void {
-    this.languageSupport = { ...this.languageSupport, ...newSupport };
+    this.languageSupport = {
+      ...this.languageSupport,
+      ...newSupport
+    };
     log.debug(`🌐 Suporte a linguagens atualizado`);
   }
 
@@ -294,28 +261,25 @@ export class PluginRegistry {
 /**
  * Instância global do registry (singleton)
  */
-let globalRegistry: PluginRegistry | null = null;
+let globalRegistro: PluginRegistry | null = null;
 
 /**
  * Obtém a instância global do registry
  */
 
 export function getGlobalRegistry(): PluginRegistry {
-  if (!globalRegistry) {
-    globalRegistry = new PluginRegistry();
+  if (!globalRegistro) {
+    globalRegistro = new PluginRegistry();
   }
-  return globalRegistry;
+  return globalRegistro;
 }
 
 /**
  * Configura a instância global do registry
  */
 
-export function configureGlobalRegistry(
-  config?: PluginConfig,
-  languageSupport?: Record<string, LanguageSupport>,
-): void {
-  globalRegistry = new PluginRegistry(config, languageSupport);
+export function configureGlobalRegistry(config?: PluginConfig, languageSupport?: Record<string, LanguageSupport>): void {
+  globalRegistro = new PluginRegistry(config, languageSupport);
 }
 
 /**
@@ -323,5 +287,5 @@ export function configureGlobalRegistry(
  */
 
 export function resetGlobalRegistry(): void {
-  globalRegistry = null;
+  globalRegistro = null;
 }

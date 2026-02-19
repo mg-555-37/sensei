@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 export type Nivel = 'info' | 'sucesso' | 'erro' | 'aviso' | 'debug';
-
 export interface FormatOptions {
   nivel: Nivel;
   mensagem: string;
@@ -26,7 +25,7 @@ export interface ProjetoMetricas {
 }
 
 // Re-export do LogContextConfig
-export { LogContextConfig } from '@core/messages/log/log-messages.js';
+export { LogContextConfiguracao } from '@core/messages/log/log-messages.js';
 
 /**
  * Tipos para funcionalidades estendidas do sistema de log
@@ -48,17 +47,8 @@ export interface LoggerBase {
  * Interface para log com capacidades de impressão de blocos
  */
 export interface LogComBloco extends LoggerBase {
-  imprimirBloco: (
-    titulo: string,
-    linhas: string[],
-    cor?: Function,
-    largura?: number,
-  ) => void;
-  calcularLargura?: (
-    titulo: string,
-    linhas: string[],
-    larguraMin?: number,
-  ) => number;
+  imprimirBloco: (titulo: string, linhas: string[], cor?: Function, largura?: number) => void;
+  calcularLargura?: (titulo: string, linhas: string[], larguraMin?: number) => number;
 }
 
 /**
@@ -79,12 +69,7 @@ export interface LogCompleto extends LogComBloco, LogComSanitizar {
  * Type guard para verificar se log tem capacidade de bloco
  */
 export function temCapacidadeBloco(log: unknown): log is LogComBloco {
-  return (
-    typeof log === 'object' &&
-    log !== null &&
-    'imprimirBloco' in log &&
-    typeof (log as LogComBloco).imprimirBloco === 'function'
-  );
+  return typeof log === 'object' && log !== null && 'imprimirBloco' in log && typeof (log as LogComBloco).imprimirBloco === 'function';
 }
 
 /**

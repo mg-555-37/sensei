@@ -11,15 +11,7 @@ export type PrioridadeNivel = 'critica' | 'alta' | 'media' | 'baixa';
 
   /* -------------------------- ANÁLISE ASYNC PATTERNS -------------------------- */
 
-export type {
-  AsyncAnalysisOptions,
-  AsyncAnalysisReport,
-  AsyncArquivoRanqueado,
-  AsyncCategoria,
-  AsyncCategoriaStats,
-  AsyncCriticidade,
-  AsyncIssuesArquivo,
-} from './async-analysis.js';
+export type { AsyncAnalysisOptions, AsyncAnalysisReport, AsyncArquivoRanqueado, AsyncCategoria, AsyncCategoriaStats, AsyncCriticidade, AsyncIssuesArquivo } from './async-analysis.js';
 
   /* -------------------------- CONSELHEIRO DOUTORAL -------------------------- */
 
@@ -31,13 +23,7 @@ export type { AlinhamentoItemDiagnostico } from './estrutura.js';
 
   /* -------------------------- FRAGMENTAÇÃO (movido de shared/) -------------------------- */
 
-export type {
-  FileEntryFragmentacao,
-  FragmentOptions,
-  Manifest,
-  ManifestPart as ManifestPartFragmentacao,
-  RelatorioCompleto as RelatorioCompletoFragmentacao,
-} from './fragmentacao.js';
+export type { FileEntryFragmentacao, FragmentOptions, Manifest, ManifestPart as ManifestPartFragmentacao, RelatorioCompleto as RelatorioCompletoFragmentacao } from './fragmentacao.js';
 
   /* -------------------------- LEITOR (movido de shared/) -------------------------- */
 
@@ -186,12 +172,7 @@ export interface ConselhoContexto {
  * Conselho do sistema doutoral
  */
 export interface Conselho {
-  categoria:
-    | 'seguranca'
-    | 'qualidade'
-    | 'performance'
-    | 'manutencao'
-    | 'arquitetura';
+  categoria: 'seguranca' | 'qualidade' | 'performance' | 'manutencao' | 'arquitetura';
   prioridade: PrioridadeNivel;
   titulo: string;
   descricao: string;
@@ -207,7 +188,7 @@ export interface RelatorioCompleto {
     ocorrencias?: Ocorrencia[];
     fileEntries?: Array<{
       relPath?: string;
-      fullPath?: string;
+      fullCaminho?: string;
       path?: string;
       content?: string;
       [k: string]: unknown;
@@ -217,7 +198,7 @@ export interface RelatorioCompleto {
   ocorrencias?: Ocorrencia[];
   fileEntries?: Array<{
     relPath?: string;
-    fullPath?: string;
+    fullCaminho?: string;
     path?: string;
     content?: string;
     [k: string]: unknown;

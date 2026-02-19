@@ -17,11 +17,10 @@ export interface ProblemaPontuacao {
   linha?: number;
   coluna?: number;
 }
-
 export interface ConfiguracaoPontuacaoZelador {
   aplicarAutomaticamente?: boolean;
   backupExt?: string;
-  maxFixesPerFile?: number;
+  maxFixesPerArquivo?: number;
 
   // opções específicas para pontuação
   normalizarUnicode?: boolean;

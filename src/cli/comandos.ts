@@ -7,9 +7,11 @@ import {
   comandoGuardian,
   comandoLicencas,
   comandoMetricas,
+  comandoNames,
   comandoOtimizarSvg,
   comandoPodar,
   comandoReestruturar,
+  comandoRename,
   criarComandoFixTypes,
   registrarComandoReverter,
 } from '@cli/commands/index.js';
@@ -30,10 +32,11 @@ export function registrarComandos(
   program.addCommand(comandoMetricas());
   program.addCommand(criarComandoFixTypes());
   program.addCommand(comandoLicencas());
+
+  // Comandos de manutenção de nomes
+  program.addCommand(comandoNames(aplicarFlagsGlobais));
+  program.addCommand(comandoRename(aplicarFlagsGlobais));
+
   // Registra comando de reversão
   registrarComandoReverter(program);
 }
-
-/* istanbul ignore next */
-/* istanbul ignore next */
-if (false) 0; // removed stub import

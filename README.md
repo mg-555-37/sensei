@@ -28,7 +28,7 @@
 
 ## 🌟 Status do Projeto
 
-**Versão Atual:** 0.3.8 | **Node.js:** >=24.12.0 | **Licença:** MIT
+**Versão Atual:** 0.3.9 | **Node.js:** >=24.12.0 | **Licença:** MIT
 
 [![Stars](https://img.shields.io/github/stars/md-555/doutor?style=social)](https://github.com/md-555/doutor/stargazers)
 [![Forks](https://img.shields.io/github/forks/md-555/doutor?style=social)](https://github.com/md-555/doutor/network/members)
@@ -331,6 +331,8 @@ PONTUACAO_MODO=conservador doutor diagnosticar
 | `otimizar-svg` | Otimização de arquivos SVG            | `doutor otimizar-svg --write`         |
 | `atualizar`    | Atualização segura do Doutor         | `doutor atualizar`                    |
 | `reverter`     | Reverter mudanças de reestruturação   | `doutor reverter listar`              |
+| `names`        | Extrair nomes para tradução           | `doutor names`                        |
+| `rename`       | Aplicar renomeação de variáveis       | `doutor rename`                       |
 
 ## 🧪 Testes
 
@@ -490,6 +492,8 @@ doutor diagnosticar --scan-only
 - `otimizar-svg` — otimização de arquivos SVG
 - `atualizar` — atualização segura com verificação de integridade
 - `reverter` — gerenciamento de mapa de reversão para reestruturação
+- `names` — extração de nomes de variáveis para mapeamento
+- `rename` — aplicação de renomeações em massa
 
 ## ⚙️ Flags globais
 

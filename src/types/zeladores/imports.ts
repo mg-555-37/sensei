@@ -9,11 +9,7 @@
 /**
  * Tipo de correção de import
  */
-export type ImportCorrecaoTipo =
-  | 'relativo-para-alias'
-  | 'tipos-extensao'
-  | 'tipos-subpath'
-  | 'alias-invalido';
+export type ImportCorrecaoTipo = 'relativo-para-alias' | 'tipos-extensao' | 'tipos-subpath' | 'alias-invalido';
 
 /**
  * Correção de import realizada
@@ -69,7 +65,7 @@ export type AliasConfig = Record<string, string>;
  */
 export interface ImportCorrecaoOptions {
   /** Raiz do projeto */
-  projectRoot: string;
+  projectRaiz: string;
   /** Fazer dry-run (não modificar arquivos) */
   dryRun?: boolean;
   /** Modo verbose */

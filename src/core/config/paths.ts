@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Centraliza padrões e utilidades de caminhos para evitar hardcodes dispersos
 
-export const SRC_ROOT = 'src';
+export const SRC_RAIZ = 'src';
 export const SRC_GLOB = 'src/**';
 
 // Diretórios sempre tratados como meta (independente de SRC)
@@ -25,6 +25,6 @@ export function isInsideSrc(relPath: string): boolean {
 
 export function isMetaPath(relPath: string): boolean {
   const r = toPosix(relPath);
-  if (META_DIRS.some((d) => r === d || r.startsWith(`${d}/`))) return true;
+  if (META_DIRS.some(d => r === d || r.startsWith(`${d}/`))) return true;
   return !isInsideSrc(r);
 }

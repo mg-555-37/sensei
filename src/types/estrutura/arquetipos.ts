@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 import type { PlanoSugestaoEstrutura } from '@';
-
 export interface ArquetipoEstruturaDef {
   nome: string;
   descricao: string;
@@ -13,7 +12,6 @@ export interface ArquetipoEstruturaDef {
   filePresencePatterns?: string[];
   pesoBase?: number;
 }
-
 export interface ArquetipoPersonalizado {
   nome: string;
   descricao?: string;
@@ -34,13 +32,11 @@ export interface ArquetipoPersonalizado {
     notasUsuario?: string;
   };
 }
-
 export interface ArquetipoDeteccaoAnomalia {
   path: string;
   motivo: string;
   sugerido?: string;
 }
-
 export interface ResultadoDeteccaoArquetipo {
   nome: string;
   descricao: string;
@@ -50,7 +46,7 @@ export interface ResultadoDeteccaoArquetipo {
   missingRequired: string[];
   matchedOptional: string[];
   dependencyMatches: string[];
-  filePatternMatches: string[];
+  filePadraoMatches: string[];
   forbiddenPresent: string[];
   anomalias: ArquetipoDeteccaoAnomalia[];
   planoSugestao?: PlanoSugestaoEstrutura;

@@ -6,7 +6,6 @@ export interface ArquivoMeta {
   categoria?: string;
   sugestao?: string;
 }
-
 export interface SinaisProjetoAvancados {
   // Campos detectados/agrupados pelo analisador de sinais
   funcoes: number;
@@ -19,7 +18,7 @@ export interface SinaisProjetoAvancados {
   scripts: string[];
   pastasPadrao: string[];
   arquivosPadrao: string[];
-  arquivosConfig: string[];
+  arquivosConfiguracao: string[];
   // Novos campos inteligentes
   padroesArquiteturais: string[];
   tecnologiasDominantes: string[];
@@ -32,7 +31,6 @@ export interface SinaisProjetoAvancados {
     ciProvider?: string;
   };
 }
-
 export interface ResultadoEstrutural {
   arquivo: string;
   ideal: string | null;

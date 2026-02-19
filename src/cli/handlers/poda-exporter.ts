@@ -6,15 +6,10 @@
 
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-
 import { config } from '@core/config/config.js';
-import { CliExportersMessages } from '@core/messages/cli/cli-exporters-messages.js';
+import { CliExportersMensagens } from '@core/messages/cli/cli-exporters-messages.js';
 import { log } from '@core/messages/index.js';
-import {
-  gerarRelatorioPodaJson,
-  gerarRelatorioPodaMarkdown,
-} from '@relatorios/relatorio-poda.js';
-
+import { gerarRelatorioPodaJson, gerarRelatorioPodaMarkdown } from '@relatorios/relatorio-poda.js';
 import type { PodaExportOptions, PodaExportResult } from '@';
 
 // Re-export para compatibilidade
@@ -32,24 +27,25 @@ export type { PodaExportOptions, PodaExportResult };
  * @param options - Opções de exportação
  * @returns Caminhos dos arquivos gerados ou null em caso de erro
  */
-export async function exportarRelatoriosPoda(
-  options: PodaExportOptions,
-): Promise<PodaExportResult | null> {
+export async function exportarRelatoriosPoda(options: PodaExportOptions): Promise<PodaExportResult | null> {
   if (!config.REPORT_EXPORT_ENABLED) {
     return null;
   }
-
   try {
-    const { baseDir, podados, pendentes, simulado } = options;
+    const {
+      baseDir,
+      podados,
+      pendentes,
+      simulado
+    } = options;
 
     // Determinar diretório de saída
-    const dir =
-      typeof config.REPORT_OUTPUT_DIR === 'string'
-        ? config.REPORT_OUTPUT_DIR
-        : path.join(baseDir, 'relatorios');
+    const dir = typeof config.REPORT_OUTPUT_DIR === 'string' ? config.REPORT_OUTPUT_DIR : path.join(baseDir, 'relatorios');
 
     // Criar diretório se não existir
-    await fs.mkdir(dir, { recursive: true });
+    await fs.mkdir(dir, {
+      recursive: true
+    });
 
     // Gerar timestamp único para os arquivos
     const ts = new Date().toISOString().replace(/[:.]/g, '-');
@@ -58,7 +54,7 @@ export async function exportarRelatoriosPoda(
     // Gerar relatório Markdown
     const caminhoMd = path.join(dir, `${nomeBase}.md`);
     await gerarRelatorioPodaMarkdown(caminhoMd, podados, pendentes, {
-      simulado,
+      simulado
     });
 
     // Gerar relatório JSON
@@ -66,15 +62,14 @@ export async function exportarRelatoriosPoda(
     await gerarRelatorioPodaJson(caminhoJson, podados, pendentes);
 
     // Log de sucesso
-    log.sucesso(CliExportersMessages.poda.relatoriosExportados(dir));
-
+    log.sucesso(CliExportersMensagens.poda.relatoriosExportados(dir));
     return {
       markdown: caminhoMd,
       json: caminhoJson,
-      dir,
+      dir
     };
   } catch (error) {
-    log.erro(CliExportersMessages.poda.falhaExportar((error as Error).message));
+    log.erro(CliExportersMensagens.poda.falhaExportar((error as Error).message));
     // Re-throw para manter comportamento original do comando
     throw error;
   }

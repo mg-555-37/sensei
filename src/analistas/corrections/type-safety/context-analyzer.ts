@@ -19,11 +19,10 @@
  * Retorna: 'legitimo' | 'melhoravel' | 'corrigir' + confiança (0-100)
  */
 import type { CategorizacaoUnknown } from '@';
-
 export function isInString(code: string, position: number): boolean {
   // Normaliza line endings para \n (Windows compatibility)
-  const normalizedCode = code.replace(/\r\n/g, '\n');
-  const before = normalizedCode.substring(0, position);
+  const normalizedCodigo = code.replace(/\r\n/g, '\n');
+  const before = normalizedCodigo.substring(0, position);
 
   // Conta aspas simples, duplas e template strings
   const singleQuotesBefore = (before.match(/(?<!\\)'/g) || []).length;
@@ -31,11 +30,7 @@ export function isInString(code: string, position: number): boolean {
   const templateQuotesBefore = (before.match(/(?<!\\)`/g) || []).length;
 
   // Se número ímpar de aspas antes, está dentro de string
-  return (
-    singleQuotesBefore % 2 === 1 ||
-    doubleQuotesBefore % 2 === 1 ||
-    templateQuotesBefore % 2 === 1
-  );
+  return singleQuotesBefore % 2 === 1 || doubleQuotesBefore % 2 === 1 || templateQuotesBefore % 2 === 1;
 }
 
 /**
@@ -56,44 +51,38 @@ export function isInString(code: string, position: number): boolean {
  */
 export function isInComment(code: string, position: number): boolean {
   // Normaliza line endings para \n (Windows compatibility)
-  const normalizedCode = code.replace(/\r\n/g, '\n');
-  const lines = normalizedCode.split('\n');
+  const normalizedCodigo = code.replace(/\r\n/g, '\n');
+  const lines = normalizedCodigo.split('\n');
   let pos = 0;
-
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-    const lineStart = pos;
-    const lineEnd = pos + line.length;
-
-    if (position >= lineStart && position <= lineEnd) {
+    const lineInicio = pos;
+    const lineFim = pos + line.length;
+    if (position >= lineInicio && position <= lineFim) {
       // Verifica comentário inline (//)
       // A posição relativa na linha
-      const posInLine = position - lineStart;
-      const commentStart = line.indexOf('//');
+      const posInLine = position - lineInicio;
+      const commentInicio = line.indexOf('//');
 
       // Se há // na linha E a posição está depois do //, está em comentário
-      if (commentStart !== -1 && posInLine >= commentStart) {
+      if (commentInicio !== -1 && posInLine >= commentInicio) {
         return true;
       }
 
       // Verifica comentário de bloco (/* */)
-      const blockStart = normalizedCode.lastIndexOf('/*', position);
-      const blockEnd = normalizedCode.indexOf('*/', position);
-
-      if (blockStart !== -1 && (blockEnd === -1 || blockEnd > position)) {
+      const blockInicio = normalizedCodigo.lastIndexOf('/*', position);
+      const blockFim = normalizedCodigo.indexOf('*/', position);
+      if (blockInicio !== -1 && (blockFim === -1 || blockFim > position)) {
         return true;
       }
-
       return false;
     }
-
-    pos = lineEnd + 1; // +1 para o \n
+    pos = lineFim + 1; // +1 para o \n
   }
-
   return false;
 } /**
- * Verifica se posição está em string ou comentário
- */
+  * Verifica se posição está em string ou comentário
+  */
 export function isInStringOrComment(code: string, position: number): boolean {
   return isInString(code, position) || isInComment(code, position);
 }
@@ -121,38 +110,23 @@ export function isTypeScriptContext(code: string, position: number): boolean {
   if (/<[^>]*>\s*\([^)]*\)\s*:\s*(any|unknown)/.test(context)) {
     return true;
   }
-
   return false;
 }
 
 /**
  * Verifica se é arquivo legado ou vendor
  */
-export function isLegacyOrVendorFile(filePath?: string): boolean {
-  if (!filePath) return false;
-
-  const legacyPatterns = [
-    '/legacy/',
-    '/legado/',
-    '/vendor/',
-    '/node_modules/',
-    '/dist/',
-    '/build/',
-    '.d.ts',
-    '.min.js',
-  ];
-
-  return legacyPatterns.some((pattern) => filePath.includes(pattern));
+export function isLegacyOrVendorFile(fileCaminho?: string): boolean {
+  if (!fileCaminho) return false;
+  const legacyPadroes = ['/legacy/', '/legado/', '/vendor/', '/node_modules/', '/dist/', '/build/', '.d.ts', '.min.js'];
+  return legacyPadroes.some(pattern => fileCaminho.includes(pattern));
 }
 
 /**
  * Verifica se unknown está sendo usado em contexto apropriado
  * Contextos apropriados: entrada genérica, APIs externas, deserialização
  */
-export function isUnknownInGenericContext(
-  code: string,
-  position: number,
-): boolean {
+export function isUnknownInGenericContext(code: string, position: number): boolean {
   const context = code.substring(Math.max(0, position - 200), position + 100);
 
   // Função genérica com tipo T
@@ -171,9 +145,7 @@ export function isUnknownInGenericContext(
   }
 
   // Funções de persistência/serialização que aceitam dados genéricos
-  if (
-    /salvar|persist|save|store|write.*:\s*\([^)]*dados:\s*unknown/.test(context)
-  ) {
+  if (/salvar|persist|save|store|write.*:\s*\([^)]*dados:\s*unknown/.test(context)) {
     return true;
   }
 
@@ -191,12 +163,9 @@ export function isUnknownInGenericContext(
   if (/\w+\?\s*:\s*unknown/.test(context)) {
     return true;
   } // Type guard function que retorna type predicate
-  if (
-    /function\s+\w+\([^)]*:\s*unknown\)[^:]*:\s*\w+\s+is\s+\w+/.test(context)
-  ) {
+  if (/function\s+\w+\([^)]*:\s*unknown\)[^:]*:\s*\w+\s+is\s+\w+/.test(context)) {
     return true;
   }
-
   return false;
 }
 
@@ -204,10 +173,7 @@ export function isUnknownInGenericContext(
  * Verifica se any está em declaração de função genérica
  * Nesses casos, pode ser legítimo dependendo do contexto
  */
-export function isAnyInGenericFunction(
-  code: string,
-  position: number,
-): boolean {
+export function isAnyInGenericFunction(code: string, position: number): boolean {
   const context = code.substring(Math.max(0, position - 300), position + 100);
 
   // Função de callback genérica
@@ -219,15 +185,14 @@ export function isAnyInGenericFunction(
   if (/on\w+\s*:\s*\([^)]*:\s*any/.test(context)) {
     return true;
   }
-
   return false;
 }
 
 /**
  * Extrai domínio do arquivo baseado no caminho
  */
-export function getDomainFromFilePath(filePath: string): string {
-  const match = filePath.match(/src\/([\w-]+)\//);
+export function getDomainFromFilePath(fileCaminho: string): string {
+  const match = fileCaminho.match(/src\/([\w-]+)\//);
   if (match) {
     return match[1];
   }
@@ -240,45 +205,35 @@ export function getDomainFromFilePath(filePath: string): string {
  * Converte PascalCase/camelCase para kebab-case
  */
 export function toKebabCase(str: string): string {
-  return str
-    .replace(/([a-z])([A-Z])/g, '$1-$2')
-    .replace(/[\s_]+/g, '-')
-    .toLowerCase();
+  return str.replace(/([a-z])([A-Z])/g, '$1-$2').replace(/[\s_]+/g, '-').toLowerCase();
 }
 
 /**
  * Verifica se é arquivo de definição de tipos (.d.ts)
  */
-export function isDefinitionFile(filePath: string): boolean {
-  return filePath.endsWith('.d.ts');
+export function isDefinitionFile(fileCaminho: string): boolean {
+  return fileCaminho.endsWith('.d.ts');
 }
 
 /**
  * Verifica se é arquivo TypeScript
  */
-export function isTypeScriptFile(filePath: string): boolean {
-  return filePath.endsWith('.ts') || filePath.endsWith('.tsx');
+export function isTypeScriptFile(fileCaminho: string): boolean {
+  return fileCaminho.endsWith('.ts') || fileCaminho.endsWith('.tsx');
 }
 
 /**
  * Extrai nome da variável/parâmetro do match
  */
-export function extractVariableName(
-  match: RegExpMatchArray,
-  code: string,
-): string | null {
+export function extractVariableName(match: RegExpMatchArray, code: string): string | null {
   const position = match.index || 0;
-  const before = code.substring(
-    Math.max(0, position - 100),
-    position + match[0].length,
-  );
+  const before = code.substring(Math.max(0, position - 100), position + match[0].length);
 
   // Padrão: nome: any ou nome: unknown
   const varMatch = before.match(/(\w+)\s*:\s*(?:any|unknown)\b/);
   if (varMatch) {
     return varMatch[1];
   }
-
   return null;
 }
 
@@ -288,35 +243,26 @@ export function extractVariableName(
 export function extractLineContext(code: string, position: number): string {
   const lines = code.split('\n');
   let pos = 0;
-
   for (const line of lines) {
-    const lineStart = pos;
-    const lineEnd = pos + line.length;
-
-    if (position >= lineStart && position <= lineEnd) {
+    const lineInicio = pos;
+    const lineFim = pos + line.length;
+    if (position >= lineInicio && position <= lineFim) {
       return line;
     }
-
-    pos = lineEnd + 1;
+    pos = lineFim + 1;
   }
-
   return '';
 }
 
 // Re-exporta para compatibilidade
 export type { CategorizacaoUnknown };
-
-export function categorizarUnknown(
-  code: string,
-  filePath: string,
-  lineContext: string,
-): CategorizacaoUnknown {
+export function categorizarUnknown(code: string, fileCaminho: string, lineContext: string): CategorizacaoUnknown {
   // Type Guards - 100% legítimo
   if (/:\s*unknown\)\s*:\s*\w+\s+is\s+/.test(lineContext)) {
     return {
       categoria: 'legitimo',
       confianca: 100,
-      motivo: 'Type guard padrão TypeScript - unknown é a escolha correta',
+      motivo: 'Type guard padrão TypeScript - unknown é a escolha correta'
     };
   }
 
@@ -325,7 +271,7 @@ export function categorizarUnknown(
     return {
       categoria: 'legitimo',
       confianca: 100,
-      motivo: 'Catch block padrão TypeScript - unknown é recomendado',
+      motivo: 'Catch block padrão TypeScript - unknown é recomendado'
     };
   }
 
@@ -334,19 +280,16 @@ export function categorizarUnknown(
     return {
       categoria: 'legitimo',
       confianca: 100,
-      motivo: 'Índice extensível - permite propriedades adicionais',
+      motivo: 'Índice extensível - permite propriedades adicionais'
     };
   }
 
   // Record<string, unknown> ou Map<*, unknown> - 100% legítimo
-  if (
-    /Record<[^,]+,\s*unknown>/.test(lineContext) ||
-    /Map<[^,]+,\s*unknown>/.test(lineContext)
-  ) {
+  if (/Record<[^,]+,\s*unknown>/.test(lineContext) || /Map<[^,]+,\s*unknown>/.test(lineContext)) {
     return {
       categoria: 'legitimo',
       confianca: 100,
-      motivo: 'Objeto genérico - Record/Map com unknown é apropriado',
+      motivo: 'Objeto genérico - Record/Map com unknown é apropriado'
     };
   }
 
@@ -355,7 +298,7 @@ export function categorizarUnknown(
     return {
       categoria: 'legitimo',
       confianca: 100,
-      motivo: 'Array genérico - unknown[] é apropriado',
+      motivo: 'Array genérico - unknown[] é apropriado'
     };
   }
 
@@ -365,30 +308,19 @@ export function categorizarUnknown(
       categoria: 'legitimo',
       confianca: 95,
       motivo: 'Parâmetro opcional - unknown é aceitável',
-      sugestao: 'Considere usar tipo mais específico se o uso for conhecido',
+      sugestao: 'Considere usar tipo mais específico se o uso for conhecido'
     };
   }
 
   // Guardian related - análise detalhada
-  if (
-    /guardian\s*:\s*unknown/.test(lineContext) ||
-    filePath.includes('guardian')
-  ) {
-    if (
-      lineContext.includes('detalhes') ||
-      lineContext.includes('erros') ||
-      lineContext.includes('Error')
-    ) {
+  if (/guardian\s*:\s*unknown/.test(lineContext) || fileCaminho.includes('guardian')) {
+    if (lineContext.includes('detalhes') || lineContext.includes('erros') || lineContext.includes('Error')) {
       return {
         categoria: 'corrigir',
         confianca: 90,
         motivo: 'Guardian error details tem estrutura conhecida',
         sugestao: 'Criar interface GuardianErrorDetails com campos específicos',
-        variantes: [
-          'interface GuardianErrorDetails { message: string; code?: string; stack?: string }',
-          'type GuardianError = Error | { message: string; details?: unknown }',
-          'Usar tipo Error nativo do TypeScript',
-        ],
+        variantes: ['interface GuardianErrorDetails { message: string; code?: string; stack?: string }', 'type GuardianError = Error | { message: string; details?: unknown }', 'Usar tipo Error nativo do TypeScript']
       };
     }
     return {
@@ -396,110 +328,74 @@ export function categorizarUnknown(
       confianca: 85,
       motivo: 'Guardian retorna dados não estruturados',
       sugestao: 'Criar interface GuardianResult com campos conhecidos',
-      variantes: [
-        'interface GuardianResult { status: "ok" | "erro"; baseline?: Baseline; drift?: Drift }',
-        'type GuardianOutput = SuccessResult | ErrorResult (discriminated union)',
-        'Usar zod/io-ts para validação runtime + tipos',
-      ],
+      variantes: ['interface GuardianResult { status: "ok" | "erro"; baseline?: Baseline; drift?: Drift }', 'type GuardianOutput = SuccessResult | ErrorResult (discriminated union)', 'Usar zod/io-ts para validação runtime + tipos']
     };
   }
 
   // AST/Babel nodes - 80% melhorável
-  if (
-    /\bast\s*:\s*unknown/.test(lineContext) ||
-    /\bnode\s*:\s*unknown/.test(lineContext) ||
-    lineContext.includes('NodePath')
-  ) {
+  if (/\bast\s*:\s*unknown/.test(lineContext) || /\bnode\s*:\s*unknown/.test(lineContext) || lineContext.includes('NodePath')) {
     return {
       categoria: 'melhoravel',
       confianca: 80,
       motivo: 'AST deveria ser tipado com Node do @babel/types',
       sugestao: 'import type { Node } from "@babel/types"; usar Node | null',
-      variantes: [
-        'Node (AST node genérico do Babel)',
-        'NodePath<Node> (para traverse)',
-        'File | Program | Statement | Expression (tipos específicos)',
-      ],
+      variantes: ['Node (AST node genérico do Babel)', 'NodePath<Node> (para traverse)', 'File | Program | Statement | Expression (tipos específicos)']
     };
   }
 
   // Funções de serialização/persistência - 95% legítimo
-  if (
-    /salvar|persist|save|store|write|serialize|stringify/.test(lineContext) &&
-    /dados\s*:\s*unknown|value\s*:\s*unknown/.test(lineContext)
-  ) {
+  if (/salvar|persist|save|store|write|serialize|stringify/.test(lineContext) && /dados\s*:\s*unknown|value\s*:\s*unknown/.test(lineContext)) {
     return {
       categoria: 'legitimo',
       confianca: 95,
-      motivo:
-        'Função de serialização - unknown é apropriado para dados genéricos',
-      sugestao:
-        'Se formato for conhecido, use tipo genérico: <T = unknown>(dados: T) => ...',
+      motivo: 'Função de serialização - unknown é apropriado para dados genéricos',
+      sugestao: 'Se formato for conhecido, use tipo genérico: <T = unknown>(dados: T) => ...'
     };
   }
 
   // Funções de validação genéricas - 95% legítimo
-  if (
-    /validar|validate|check|assert|guard/.test(lineContext) &&
-    /\w+\s*:\s*unknown/.test(lineContext)
-  ) {
+  if (/validar|validate|check|assert|guard/.test(lineContext) && /\w+\s*:\s*unknown/.test(lineContext)) {
     return {
       categoria: 'legitimo',
       confianca: 95,
-      motivo: 'Função de validação - recebe unknown e valida tipo',
+      motivo: 'Função de validação - recebe unknown e valida tipo'
     };
   }
 
   // Acesso dinâmico protegido (safeGet) - 95% legítimo
-  if (
-    /safeGet|tryGet|getProperty/.test(lineContext) &&
-    /:\s*unknown/.test(lineContext) &&
-    !/:\s*unknown\)/.test(lineContext)
-  ) {
+  if (/safeGet|tryGet|getProperty/.test(lineContext) && /:\s*unknown/.test(lineContext) && !/:\s*unknown\)/.test(lineContext)) {
     return {
       categoria: 'legitimo',
       confianca: 95,
       motivo: 'Acesso dinâmico protegido - retorno é unknown por segurança',
-      sugestao:
-        'Validar tipo após obter valor: const val = safeGet(...); if (typeof val === ...)',
+      sugestao: 'Validar tipo após obter valor: const val = safeGet(...); if (typeof val === ...)'
     };
   }
 
   // Replacer functions em JSON - 95% legítimo
-  if (
-    /replacer|reviver/.test(lineContext) &&
-    /\w+\s*:\s*unknown/.test(lineContext)
-  ) {
+  if (/replacer|reviver/.test(lineContext) && /\w+\s*:\s*unknown/.test(lineContext)) {
     return {
       categoria: 'legitimo',
       confianca: 95,
-      motivo: 'Replacer/reviver do JSON - unknown é esperado',
+      motivo: 'Replacer/reviver do JSON - unknown é esperado'
     };
   }
 
   // Wrappers de AST/parsing - 95% legítimo
-  if (
-    /wrap|parse|transform/.test(lineContext) &&
-    /ast\s*:\s*unknown|rawAst\s*:\s*unknown/.test(lineContext)
-  ) {
+  if (/wrap|parse|transform/.test(lineContext) && /ast\s*:\s*unknown|rawAst\s*:\s*unknown/.test(lineContext)) {
     return {
       categoria: 'legitimo',
       confianca: 95,
-      motivo: 'Wrapper de parser - AST de origem desconhecida',
+      motivo: 'Wrapper de parser - AST de origem desconhecida'
     };
   }
 
   // Funções de error handling - 95% legítimo
-  if (
-    /error\s*:\s*unknown|err\s*:\s*unknown|e\s*:\s*unknown/.test(lineContext) &&
-    (/extrair|extract|format|parse/.test(lineContext) ||
-      filePath.includes('validacao'))
-  ) {
+  if (/error\s*:\s*unknown|err\s*:\s*unknown|e\s*:\s*unknown/.test(lineContext) && (/extrair|extract|format|parse/.test(lineContext) || fileCaminho.includes('validacao'))) {
     return {
       categoria: 'legitimo',
       confianca: 95,
-      motivo:
-        'Error handling - error pode ser de qualquer tipo em catch/callbacks',
+      motivo: 'Error handling - error pode ser de qualquer tipo em catch/callbacks'
     };
   }
 
@@ -508,19 +404,16 @@ export function categorizarUnknown(
     return {
       categoria: 'legitimo',
       confianca: 95,
-      motivo: 'Test utilities - tipos genéricos de framework de testes',
+      motivo: 'Test utilities - tipos genéricos de framework de testes'
     };
   }
 
   // CLI options/callbacks - 95% legítimo quando vem de framework
-  if (
-    /opts\s*:\s*unknown|options\s*:\s*unknown/.test(lineContext) &&
-    (filePath.includes('cli') || /aplicar|process|handle/.test(lineContext))
-  ) {
+  if (/opts\s*:\s*unknown|options\s*:\s*unknown/.test(lineContext) && (fileCaminho.includes('cli') || /aplicar|process|handle/.test(lineContext))) {
     return {
       categoria: 'legitimo',
       confianca: 95,
-      motivo: 'CLI framework callback - opts validado downstream',
+      motivo: 'CLI framework callback - opts validado downstream'
     };
   }
 
@@ -529,23 +422,19 @@ export function categorizarUnknown(
     return {
       categoria: 'legitimo',
       confianca: 95,
-      motivo: 'Type assertion para acesso dinâmico - padrão de compatibilidade',
+      motivo: 'Type assertion para acesso dinâmico - padrão de compatibilidade'
     };
   }
 
   // Callbacks/handlers genéricos - análise contextual
   if (/(opts|options|params|args)\s*:\s*unknown/.test(lineContext)) {
-    if (filePath.includes('cli') || filePath.includes('comando')) {
+    if (fileCaminho.includes('cli') || fileCaminho.includes('comando')) {
       return {
         categoria: 'legitimo',
         confianca: 85,
         motivo: 'Callback CLI - opts será validado downstream',
         sugestao: 'Considere tipar se a interface for conhecida',
-        variantes: [
-          'CommandOptions (interface do commander.js)',
-          'Record<string, string | boolean | number> (CLI flags genéricos)',
-          'Usar zod schema para validação + inferência de tipos',
-        ],
+        variantes: ['CommandOptions (interface do commander.js)', 'Record<string, string | boolean | number> (CLI flags genéricos)', 'Usar zod schema para validação + inferência de tipos']
       };
     }
     return {
@@ -553,11 +442,7 @@ export function categorizarUnknown(
       confianca: 70,
       motivo: 'Parâmetro genérico - pode ser mais específico',
       sugestao: 'Definir interface específica para os parâmetros',
-      variantes: [
-        'interface FunctionOptions { timeout?: number; verbose?: boolean; ... }',
-        'Partial<KnownConfig> (se for subset de config)',
-        'Usar tipo genérico com constraint: <T extends BaseOptions>',
-      ],
+      variantes: ['interface FunctionOptions { timeout?: number; verbose?: boolean; ... }', 'Partial<KnownConfig> (se for subset de config)', 'Usar tipo genérico com constraint: <T extends BaseOptions>']
     };
   }
 
@@ -568,68 +453,42 @@ export function categorizarUnknown(
       confianca: 75,
       motivo: 'Array operation com tipo genérico - pode inferir tipo do array',
       sugestao: 'Tipar o array pai para propagar tipos automaticamente',
-      variantes: [
-        'Especificar tipo do array: items: Item[] em vez de items: unknown[]',
-        'Usar generics: function filter<T>(items: T[], predicate: (item: T) => boolean)',
-        'Inferir do contexto: const typed = items as KnownType[]',
-      ],
+      variantes: ['Especificar tipo do array: items: Item[] em vez de items: unknown[]', 'Usar generics: function filter<T>(items: T[], predicate: (item: T) => boolean)', 'Inferir do contexto: const typed = items as KnownType[]']
     };
   }
 
   // Relatórios/fragmentação - 70% melhorável
-  if (
-    filePath.includes('relatorio') ||
-    filePath.includes('fragmentar') ||
-    lineContext.includes('Manifest')
-  ) {
+  if (fileCaminho.includes('relatorio') || fileCaminho.includes('fragmentar') || lineContext.includes('Manifest')) {
     return {
       categoria: 'melhoravel',
       confianca: 70,
       motivo: 'Dados de relatório - estrutura pode ser definida',
       sugestao: 'Criar interfaces específicas para estruturas de dados',
-      variantes: [
-        'interface RelatorioCompleto { summary: Summary; detalhes: Detalhe[]; ... }',
-        'interface ManifestPart { id: string; tipo: string; conteudo: unknown }',
-        'type RelatorioJson = { version: string; data: Record<string, unknown> }',
-      ],
+      variantes: ['interface RelatorioCompleto { summary: Summary; detalhes: Detalhe[]; ... }', 'interface ManifestPart { id: string; tipo: string; conteudo: unknown }', 'type RelatorioJson = { version: string; data: Record<string, unknown> }']
     };
   }
 
   // Compatibilidade de módulos - 95% legítimo
-  if (filePath.includes('chalk-safe') || /import\s*\(/.test(lineContext)) {
+  if (fileCaminho.includes('chalk-safe') || /import\s*\(/.test(lineContext)) {
     return {
       categoria: 'legitimo',
       confianca: 95,
-      motivo:
-        'Compatibilidade ESM/CJS - unknown necessário para imports dinâmicos',
-      sugestao: 'Pode adicionar type assertion após validação runtime',
+      motivo: 'Compatibilidade ESM/CJS - unknown necessário para imports dinâmicos',
+      sugestao: 'Pode adicionar type assertion após validação runtime'
     };
   }
 
   // Análise de contexto amplo quando específico falha
-  const contextoAmplo = code.substring(
-    Math.max(0, lineContext.length - 300),
-    lineContext.length + 200,
-  );
+  const contextoAmplo = code.substring(Math.max(0, lineContext.length - 300), lineContext.length + 200);
 
   // Verifica se há validação/type guard próximo
-  if (
-    /typeof\s+\w+\s*===/.test(contextoAmplo) ||
-    /instanceof/.test(contextoAmplo) ||
-    /is\w+\(/.test(contextoAmplo)
-  ) {
+  if (/typeof\s+\w+\s*===/.test(contextoAmplo) || /instanceof/.test(contextoAmplo) || /is\w+\(/.test(contextoAmplo)) {
     return {
       categoria: 'melhoravel',
       confianca: 65,
-      motivo:
-        'Há validação de tipo próxima - pode extrair para type guard dedicado',
-      sugestao:
-        'Criar função type guard: function isTipoX(obj: unknown): obj is TipoX { ... }',
-      variantes: [
-        'Extrair validações para type guard reutilizável',
-        'Usar biblioteca de validação (zod, yup, io-ts) para runtime + types',
-        'Criar branded types se for validação complexa',
-      ],
+      motivo: 'Há validação de tipo próxima - pode extrair para type guard dedicado',
+      sugestao: 'Criar função type guard: function isTipoX(obj: unknown): obj is TipoX { ... }',
+      variantes: ['Extrair validações para type guard reutilizável', 'Usar biblioteca de validação (zod, yup, io-ts) para runtime + types', 'Criar branded types se for validação complexa']
     };
   }
 
@@ -639,11 +498,6 @@ export function categorizarUnknown(
     confianca: 60,
     motivo: 'Tipo unknown genérico - análise contextual limitada',
     sugestao: 'Analisar fluxo de dados para inferir tipo correto',
-    variantes: [
-      'Se vem de API externa: definir interface baseada na resposta esperada',
-      'Se é callback: especificar assinatura da função',
-      'Se é config/options: criar interface com campos opcionais',
-      'Se é polimórfico: considerar discriminated union ou generics',
-    ],
+    variantes: ['Se vem de API externa: definir interface baseada na resposta esperada', 'Se é callback: especificar assinatura da função', 'Se é config/options: criar interface com campos opcionais', 'Se é polimórfico: considerar discriminated union ou generics']
   };
 }

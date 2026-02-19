@@ -11,13 +11,13 @@
 // Constantes Unicode e BMP
 const ASCII_MAX = 0x7f;
 const BMP_MAX = 0xffff;
-const SUPPLEMENTARY_PLANE_OFFSET = 0x10000;
+const SUPPLEMENTARY_PLANO_DESLOCAMENTO = 0x10000;
 const HIGH_SURROGATE_BASE = 0xd800;
 const LOW_SURROGATE_BASE = 0xdc00;
-const SURROGATE_SHIFT = 10;
-const SURROGATE_MASK = 0x3ff;
+const SURROGATE_DESLOCAMENTO = 10;
+const SURROGATE_MASCARA = 0x3ff;
 const HEX_PAD_LENGTH = 4;
-const JSON_INDENT_DEFAULT = 2;
+const JSON_INDENTACAO_PADRAO = 2;
 
 /**
  * Escapa caracteres não-ASCII para sequências \uXXXX, incluindo pares substitutos.
@@ -33,11 +33,9 @@ export function escapeNonAscii(s: string): string {
       out += `\\u${cp.toString(16).padStart(HEX_PAD_LENGTH, '0')}`;
     } else {
       // caracteres fora do BMP -> pares substitutos
-      const codePointOffset = cp - SUPPLEMENTARY_PLANE_OFFSET;
-      const highSurrogate =
-        HIGH_SURROGATE_BASE + (codePointOffset >> SURROGATE_SHIFT);
-      const lowSurrogate =
-        LOW_SURROGATE_BASE + (codePointOffset & SURROGATE_MASK);
+      const codePointOffset = cp - SUPPLEMENTARY_PLANO_DESLOCAMENTO;
+      const highSurrogate = HIGH_SURROGATE_BASE + (codePointOffset >> SURROGATE_DESLOCAMENTO);
+      const lowSurrogate = LOW_SURROGATE_BASE + (codePointOffset & SURROGATE_MASCARA);
       out += `\\u${highSurrogate.toString(16).padStart(HEX_PAD_LENGTH, '0')}`;
       out += `\\u${lowSurrogate.toString(16).padStart(HEX_PAD_LENGTH, '0')}`;
     }
@@ -65,11 +63,9 @@ export function escapeJsonAscii(raw: string): string {
       out += `\\u${cp.toString(16).padStart(HEX_PAD_LENGTH, '0')}`;
     } else {
       // fora do BMP: gerar pares substitutos
-      const codePointOffset = cp - SUPPLEMENTARY_PLANE_OFFSET;
-      const highSurrogate =
-        HIGH_SURROGATE_BASE + (codePointOffset >> SURROGATE_SHIFT);
-      const lowSurrogate =
-        LOW_SURROGATE_BASE + (codePointOffset & SURROGATE_MASK);
+      const codePointOffset = cp - SUPPLEMENTARY_PLANO_DESLOCAMENTO;
+      const highSurrogate = HIGH_SURROGATE_BASE + (codePointOffset >> SURROGATE_DESLOCAMENTO);
+      const lowSurrogate = LOW_SURROGATE_BASE + (codePointOffset & SURROGATE_MASCARA);
       out += `\\u${highSurrogate.toString(16).padStart(HEX_PAD_LENGTH, '0')}\\u${lowSurrogate.toString(16).padStart(HEX_PAD_LENGTH, '0')}`;
       // pular o segundo code unit já consumido pelo codePointAt
       i++;
@@ -83,11 +79,9 @@ export function escapeJsonAscii(raw: string): string {
  * options.asciiOnly for true, converte o JSON resultante em ASCII-only
  * substituindo caracteres > 0x7F por \uXXXX.
  */
-export function stringifyJsonEscaped(
-  value: unknown,
-  space: number = JSON_INDENT_DEFAULT,
-  options?: { asciiOnly?: boolean },
-): string {
+export function stringifyJsonEscaped(value: unknown, space: number = JSON_INDENTACAO_PADRAO, options?: {
+  asciiOnly?: boolean;
+}): string {
   const raw = JSON.stringify(value, null, space);
   if (options && options.asciiOnly) return escapeJsonAscii(raw);
   return raw;

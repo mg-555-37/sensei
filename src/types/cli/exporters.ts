@@ -4,7 +4,6 @@
  */
 
 import type { Ocorrencia } from '@';
-
 import type { ArquetipoResult } from '../../cli/diagnostico/handlers/arquetipo-handler.js';
 import type { AutoFixResult } from '../../cli/diagnostico/handlers/auto-fix-handler.js';
 import type { GuardianResult } from '../../cli/diagnostico/handlers/guardian-handler.js';
@@ -36,7 +35,7 @@ export interface RelatorioJson {
     /** Versão do Doutor */
     doutorVersion?: string;
     /** Nome do projeto */
-    projectName?: string;
+    projectNome?: string;
   };
 
   /** Estatísticas gerais */
@@ -163,7 +162,11 @@ export interface DadosRelatorioMarkdown {
     arquivosAnalisados: number;
     arquivosComProblemas: number;
     totalOcorrencias: number;
-    porNivel: { erro: number; aviso: number; info: number };
+    porNivel: {
+      erro: number;
+      aviso: number;
+      info: number;
+    };
     porCategoria: Record<string, number>;
     tempoExecucao?: number;
   };

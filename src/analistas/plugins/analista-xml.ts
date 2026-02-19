@@ -1,35 +1,20 @@
 // SPDX-License-Identifier: MIT
-import {
-  AnalystOrigins,
-  AnalystTypes,
-  SeverityLevels,
-  XmlMessages,
-} from '@core/messages/core/plugin-messages.js';
+import { AnalystOrigens, AnalystTipos, SeverityNiveis, XmlMensagens } from '@core/messages/core/plugin-messages.js';
 import { createLineLookup } from '@shared/helpers/line-lookup.js';
 import { maskXmlNonCode } from '@shared/helpers/masking.js';
-
 import { criarAnalista, criarOcorrencia } from '@';
-
 const disableEnv = process.env.DOUTOR_DISABLE_PLUGIN_XML === '1';
-
 type Msg = ReturnType<typeof criarOcorrencia>;
-
-function warn(
-  message: string,
-  relPath: string,
-  line?: number,
-  nivel: (typeof SeverityLevels)[keyof typeof SeverityLevels] = SeverityLevels.warning,
-): Msg {
+function warn(message: string, relPath: string, line?: number, nivel: (typeof SeverityNiveis)[keyof typeof SeverityNiveis] = SeverityNiveis.warning): Msg {
   return criarOcorrencia({
     relPath,
     mensagem: message,
     linha: line,
     nivel,
-    origem: AnalystOrigins.xml,
-    tipo: AnalystTypes.xml,
+    origem: AnalystOrigens.xml,
+    tipo: AnalystTipos.xml
   });
 }
-
 function collectXmlIssues(src: string, relPath: string): Msg[] {
   const ocorrencias: Msg[] = [];
 
@@ -41,12 +26,9 @@ function collectXmlIssues(src: string, relPath: string): Msg[] {
   // Prolog (opcional): só alerta se o arquivo parece XML completo e começa direto com tag.
   // Fragmentos XML (como em SOAP ou RSS) podem não ter prolog.
   const trimmed = src.trimStart();
-  const seemsCompleteDocument =
-    /^<\w/i.test(trimmed) && !trimmed.includes('<?xml');
+  const seemsCompleteDocument = /^<\w/i.test(trimmed) && !trimmed.includes('<?xml');
   if (seemsCompleteDocument && /^</.test(trimmed)) {
-    ocorrencias.push(
-      warn(XmlMessages.xmlPrologAusente, relPath, 1, SeverityLevels.info),
-    );
+    ocorrencias.push(warn(XmlMensagens.xmlPrologAusente, relPath, 1, SeverityNiveis.info));
   }
 
   // Validação básica de estrutura XML (tags balanceadas)
@@ -56,38 +38,22 @@ function collectXmlIssues(src: string, relPath: string): Msg[] {
   const tagStack: string[] = [];
   while ((match = tagRegex.exec(scan)) !== null) {
     const fullTag = match[0];
-    const tagName = match[1];
+    const tagNome = match[1];
     const line = lineOf(match.index);
-
     if (fullTag.startsWith('</')) {
       // Tag de fechamento
       const expected = tagStack.pop();
-      if (expected !== tagName) {
-        ocorrencias.push(
-          warn(
-            XmlMessages.invalidXmlStructure,
-            relPath,
-            line,
-            SeverityLevels.error,
-          ),
-        );
+      if (expected !== tagNome) {
+        ocorrencias.push(warn(XmlMensagens.invalidXmlStructure, relPath, line, SeverityNiveis.error));
         break; // Para evitar cascata de erros
       }
     } else if (!fullTag.endsWith('/>')) {
       // Tag de abertura (não self-closing)
-      tagStack.push(tagName);
+      tagStack.push(tagNome);
     }
   }
-
   if (tagStack.length > 0) {
-    ocorrencias.push(
-      warn(
-        XmlMessages.invalidXmlStructure,
-        relPath,
-        lineOf(scan.length),
-        SeverityLevels.error,
-      ),
-    );
+    ocorrencias.push(warn(XmlMensagens.invalidXmlStructure, relPath, lineOf(scan.length), SeverityNiveis.error));
   }
 
   // Namespaces não declarados
@@ -98,24 +64,12 @@ function collectXmlIssues(src: string, relPath: string): Msg[] {
     const prefix = match[1];
     if (prefix) declaredNamespaces.add(prefix);
   }
-
   const prefixRegex = /([a-zA-Z_][\w.-]*):[a-zA-Z_][\w.-]*/g;
   while ((match = prefixRegex.exec(scan)) !== null) {
     const prefix = match[1];
-    if (
-      !declaredNamespaces.has(prefix) &&
-      prefix !== 'xml' &&
-      prefix !== 'xmlns'
-    ) {
+    if (!declaredNamespaces.has(prefix) && prefix !== 'xml' && prefix !== 'xmlns') {
       const line = lineOf(match.index);
-      ocorrencias.push(
-        warn(
-          XmlMessages.namespaceUndeclared(prefix),
-          relPath,
-          line,
-          SeverityLevels.warning,
-        ),
-      );
+      ocorrencias.push(warn(XmlMensagens.namespaceUndeclared(prefix), relPath, line, SeverityNiveis.warning));
     }
   }
 
@@ -124,105 +78,52 @@ function collectXmlIssues(src: string, relPath: string): Msg[] {
     const chunk = m[0] ?? '';
     const hasExternalId = /\b(SYSTEM|PUBLIC)\b/i.test(chunk);
     const line = lineOf(m.index);
-    ocorrencias.push(warn(XmlMessages.doctypeDetectado, relPath, line));
+    ocorrencias.push(warn(XmlMensagens.doctypeDetectado, relPath, line));
     if (hasExternalId) {
-      ocorrencias.push(
-        warn(
-          XmlMessages.doctypeExternoDetectado,
-          relPath,
-          line,
-          SeverityLevels.error,
-        ),
-      );
+      ocorrencias.push(warn(XmlMensagens.doctypeExternoDetectado, relPath, line, SeverityNiveis.error));
     }
   }
-
   for (const m of scan.matchAll(/<!ENTITY\b[\s\S]*?>/gi)) {
     const chunk = m[0] ?? '';
     const hasExternal = /\b(SYSTEM|PUBLIC)\b/i.test(chunk);
     const isParamEntity = /<!ENTITY\s+%/i.test(chunk);
-    const hasDangerousSystemId =
-      /\bSYSTEM\b[\s\S]*?['"]\s*(file:|ftp:|gopher:|jar:|php:|data:)/i.test(
-        chunk,
-      );
+    const hasDangerousSystemId = /\bSYSTEM\b[\s\S]*?['"]\s*(file:|ftp:|gopher:|jar:|php:|data:)/i.test(chunk);
     const line = lineOf(m.index);
-
     if (isParamEntity) {
-      ocorrencias.push(
-        warn(
-          XmlMessages.entidadeParametroDetectada,
-          relPath,
-          line,
-          SeverityLevels.warning,
-        ),
-      );
+      ocorrencias.push(warn(XmlMensagens.entidadeParametroDetectada, relPath, line, SeverityNiveis.warning));
     }
 
     // Detecta entidades com expansão potencialmente grande (Billion Laughs)
     // Focar em entidades recursivas ou com referências múltiplas, não apenas tamanho
-    const entityValue = chunk.match(
-      /<!ENTITY\s+[^'"]*\s+['"]([^'"]*)['"]/i,
-    )?.[1];
-    if (entityValue && entityValue.includes('&') && entityValue.length > 100) {
+    const entityValor = chunk.match(/<!ENTITY\s+[^'"]*\s+['"]([^'"]*)['"]/i)?.[1];
+    if (entityValor && entityValor.includes('&') && entityValor.length > 100) {
       // Heurística simples: entidades que referenciam outras e são grandes
-      ocorrencias.push(
-        warn(
-          XmlMessages.largeEntityExpansion,
-          relPath,
-          line,
-          SeverityLevels.error,
-        ),
-      );
+      ocorrencias.push(warn(XmlMensagens.largeEntityExpansion, relPath, line, SeverityNiveis.error));
     }
-
-    ocorrencias.push(
-      warn(
-        hasExternal
-          ? XmlMessages.entidadeExternaDetectada
-          : XmlMessages.entidadeDetectada,
-        relPath,
-        line,
-        hasExternal || hasDangerousSystemId
-          ? SeverityLevels.error
-          : SeverityLevels.warning,
-      ),
-    );
+    ocorrencias.push(warn(hasExternal ? XmlMensagens.entidadeExternaDetectada : XmlMensagens.entidadeDetectada, relPath, line, hasExternal || hasDangerousSystemId ? SeverityNiveis.error : SeverityNiveis.warning));
   }
 
   // XInclude (carregamento externo)
   for (const m of scan.matchAll(/<\s*(?:xi|xinclude):include\b[^>]*>/gi)) {
-    ocorrencias.push(
-      warn(XmlMessages.xincludeDetectado, relPath, lineOf(m.index)),
-    );
+    ocorrencias.push(warn(XmlMensagens.xincludeDetectado, relPath, lineOf(m.index)));
   }
 
   // CDATA em atributos (inválido)
   for (const m of scan.matchAll(/=\s*['"]\s*<![CDATA[[^]]*]]>\s*['"]/gi)) {
-    ocorrencias.push(
-      warn(
-        XmlMessages.cdataInAttribute,
-        relPath,
-        lineOf(m.index),
-        SeverityLevels.error,
-      ),
-    );
+    ocorrencias.push(warn(XmlMensagens.cdataInAttribute, relPath, lineOf(m.index), SeverityNiveis.error));
   }
-
   return ocorrencias;
 }
-
 export const analistaXml = criarAnalista({
   nome: 'analista-xml',
   categoria: 'markup',
-  descricao:
-    'Heurísticas leves para XML (foco em segurança/XXE e compatibilidade).',
+  descricao: 'Heurísticas leves para XML (foco em segurança/XXE e compatibilidade).',
   global: false,
   test: (relPath: string): boolean => /\.xml$/i.test(relPath),
   aplicar: async (src, relPath): Promise<Msg[] | null> => {
     if (disableEnv) return null;
     const msgs = collectXmlIssues(src, relPath);
     return msgs.length ? msgs : null;
-  },
+  }
 });
-
 export default analistaXml;

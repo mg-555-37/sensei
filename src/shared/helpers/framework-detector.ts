@@ -2,9 +2,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-
 import type { FrameworkInfo } from '@';
-
 export type { FrameworkInfo };
 
 /**
@@ -12,58 +10,81 @@ export type { FrameworkInfo };
  */
 export function detectarFrameworks(rootDir: string): FrameworkInfo[] {
   const frameworks: FrameworkInfo[] = [];
-
   try {
-    const packageJsonPath = path.join(rootDir, 'package.json');
-    if (!fs.existsSync(packageJsonPath)) {
+    const packageJsonCaminho = path.join(rootDir, 'package.json');
+    if (!fs.existsSync(packageJsonCaminho)) {
       return frameworks;
     }
-
-    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+    const packageJson = JSON.parse(fs.readFileSync(packageJsonCaminho, 'utf-8'));
     const dependencies = packageJson.dependencies || {};
     const devDependencies = packageJson.devDependencies || {};
 
     // Lista de frameworks conhecidos com seus identificadores
-    const knownFrameworks = [
-      { pkg: 'discord.js', name: 'Discord.js' },
-      { pkg: '@discordjs/rest', name: 'Discord.js' },
-      { pkg: 'stripe', name: 'Stripe' },
-      { pkg: '@stripe/stripe-js', name: 'Stripe' },
-      { pkg: 'aws-sdk', name: 'AWS SDK' },
-      { pkg: '@aws-sdk/client-s3', name: 'AWS SDK' },
-      { pkg: 'express', name: 'Express' },
-      { pkg: 'fastify', name: 'Fastify' },
-      { pkg: 'next', name: 'Next.js' },
-      { pkg: 'react', name: 'React' },
-      { pkg: 'vue', name: 'Vue' },
-      { pkg: '@angular/core', name: 'Angular' },
-    ];
+    const knownFrameworks = [{
+      pkg: 'discord.js',
+      name: 'Discord.js'
+    }, {
+      pkg: '@discordjs/rest',
+      name: 'Discord.js'
+    }, {
+      pkg: 'stripe',
+      name: 'Stripe'
+    }, {
+      pkg: '@stripe/stripe-js',
+      name: 'Stripe'
+    }, {
+      pkg: 'aws-sdk',
+      name: 'AWS SDK'
+    }, {
+      pkg: '@aws-sdk/client-s3',
+      name: 'AWS SDK'
+    }, {
+      pkg: 'express',
+      name: 'Express'
+    }, {
+      pkg: 'fastify',
+      name: 'Fastify'
+    }, {
+      pkg: 'next',
+      name: 'Next.js'
+    }, {
+      pkg: 'react',
+      name: 'React'
+    }, {
+      pkg: 'vue',
+      name: 'Vue'
+    }, {
+      pkg: '@angular/core',
+      name: 'Angular'
+    }];
 
     // Verificar dependências
-    for (const { pkg, name } of knownFrameworks) {
+    for (const {
+      pkg,
+      name
+    } of knownFrameworks) {
       if (dependencies[pkg]) {
         frameworks.push({
           name,
           version: dependencies[pkg],
-          isDev: false,
+          isDev: false
         });
       } else if (devDependencies[pkg]) {
         frameworks.push({
           name,
           version: devDependencies[pkg],
-          isDev: true,
+          isDev: true
         });
       }
     }
 
     // Remover duplicatas (mesma framework em prod e dev)
     const unique = frameworks.reduce((acc, curr) => {
-      if (!acc.find((f) => f.name === curr.name)) {
+      if (!acc.find(f => f.name === curr.name)) {
         acc.push(curr);
       }
       return acc;
     }, [] as FrameworkInfo[]);
-
     return unique;
   } catch {
     return frameworks;
@@ -75,5 +96,5 @@ export function detectarFrameworks(rootDir: string): FrameworkInfo[] {
  */
 export function hasFramework(rootDir: string, frameworkName: string): boolean {
   const frameworks = detectarFrameworks(rootDir);
-  return frameworks.some((f) => f.name === frameworkName);
+  return frameworks.some(f => f.name === frameworkName);
 }

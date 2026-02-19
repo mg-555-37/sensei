@@ -11,15 +11,9 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-
 import { config } from '@core/config/config.js';
 import { mesclarConfigExcludes } from '@core/config/excludes-padrao.js';
-
-import type {
-  FiltrosProcessados,
-  OpcoesProcessamentoFiltros,
-  TipoLinguagemProjeto,
-} from '@';
+import type { FiltrosProcessados, OpcoesProcessamentoFiltros, TipoLinguagemProjeto } from '@';
 
   /* -------------------------- PROCESSAMENTO DE PADRÕES -------------------------- */
 
@@ -30,19 +24,9 @@ import type {
  * processPatternListAchatado(['src/**', 'tests, lib'])
  * // => ['src/**', 'tests', 'lib']
  */
-export function processPatternListAchatado(
-  raw: string[] | undefined,
-): string[] {
+export function processPatternListAchatado(raw: string[] | undefined): string[] {
   if (!raw || raw.length === 0) return [];
-
-  return Array.from(
-    new Set(
-      raw
-        .flatMap((r) => r.split(/[\s,]+/))
-        .map((s) => s.trim())
-        .filter(Boolean),
-    ),
-  );
+  return Array.from(new Set(raw.flatMap(r => r.split(/[\s,]+/)).map(s => s.trim()).filter(Boolean)));
 }
 
 /**
@@ -54,15 +38,7 @@ export function processPatternListAchatado(
  */
 export function processPatternGroups(raw: string[] | undefined): string[][] {
   if (!raw || raw.length === 0) return [];
-
-  return raw
-    .map((grupo) =>
-      grupo
-        .split(/[\s,]+/)
-        .map((s) => s.trim())
-        .filter(Boolean),
-    )
-    .filter((g) => g.length > 0);
+  return raw.map(grupo => grupo.split(/[\s,]+/).map(s => s.trim()).filter(Boolean)).filter(g => g.length > 0);
 }
 
 /**
@@ -79,7 +55,6 @@ export function processPatternGroups(raw: string[] | undefined): string[][] {
 export function expandIncludes(list: string[]): string[] {
   const META = /[\\*\?\{\}\[\]]/; // metacaracteres glob
   const out = new Set<string>();
-
   for (const p of list) {
     out.add(p);
 
@@ -97,7 +72,6 @@ export function expandIncludes(list: string[]): string[] {
       }
     }
   }
-
   return Array.from(out);
 }
 
@@ -106,15 +80,10 @@ export function expandIncludes(list: string[]): string[] {
 /**
  * Detecta tipo de projeto baseado em arquivos presentes
  */
-export function detectarTipoProjeto(
-  baseDir: string = process.cwd(),
-): TipoLinguagemProjeto {
+export function detectarTipoProjeto(baseDir: string = process.cwd()): TipoLinguagemProjeto {
   try {
     // TypeScript
-    if (
-      fs.existsSync(path.join(baseDir, 'tsconfig.json')) &&
-      fs.existsSync(path.join(baseDir, 'package.json'))
-    ) {
+    if (fs.existsSync(path.join(baseDir, 'tsconfig.json')) && fs.existsSync(path.join(baseDir, 'package.json'))) {
       return 'typescript';
     }
 
@@ -124,32 +93,20 @@ export function detectarTipoProjeto(
     }
 
     // Python
-    if (
-      fs.existsSync(path.join(baseDir, 'requirements.txt')) ||
-      fs.existsSync(path.join(baseDir, 'pyproject.toml')) ||
-      fs.existsSync(path.join(baseDir, 'setup.py'))
-    ) {
+    if (fs.existsSync(path.join(baseDir, 'requirements.txt')) || fs.existsSync(path.join(baseDir, 'pyproject.toml')) || fs.existsSync(path.join(baseDir, 'setup.py'))) {
       return 'python';
     }
 
     // Java
-    if (
-      fs.existsSync(path.join(baseDir, 'pom.xml')) ||
-      fs.existsSync(path.join(baseDir, 'build.gradle')) ||
-      fs.existsSync(path.join(baseDir, 'build.gradle.kts'))
-    ) {
+    if (fs.existsSync(path.join(baseDir, 'pom.xml')) || fs.existsSync(path.join(baseDir, 'build.gradle')) || fs.existsSync(path.join(baseDir, 'build.gradle.kts'))) {
       return 'java';
     }
 
     // .NET
     const files = fs.readdirSync(baseDir);
-    if (
-      files.some((f) => f.endsWith('.csproj')) ||
-      files.some((f) => f.endsWith('.sln'))
-    ) {
+    if (files.some(f => f.endsWith('.csproj')) || files.some(f => f.endsWith('.sln'))) {
       return 'dotnet';
     }
-
     return 'generico';
   } catch {
     return 'generico';
@@ -161,18 +118,12 @@ export function detectarTipoProjeto(
 /**
  * Obtém padrões de exclusão padrão baseados em configuração e tipo de projeto
  */
-export function getDefaultExcludes(
-  tipoProjeto?: TipoLinguagemProjeto,
-): string[] {
+export function getDefaultExcludes(tipoProjeto?: TipoLinguagemProjeto): string[] {
   // Tenta obter do doutor.config.json
-  const configIncludeExclude = config.INCLUDE_EXCLUDE_RULES;
-
-  if (configIncludeExclude?.globalExcludeGlob) {
-    if (
-      Array.isArray(configIncludeExclude.globalExcludeGlob) &&
-      configIncludeExclude.globalExcludeGlob.length > 0
-    ) {
-      return Array.from(new Set(configIncludeExclude.globalExcludeGlob));
+  const configIncluirExcluir = config.INCLUDE_EXCLUDE_RULES;
+  if (configIncluirExcluir?.globalExcludeGlob) {
+    if (Array.isArray(configIncluirExcluir.globalExcludeGlob) && configIncluirExcluir.globalExcludeGlob.length > 0) {
+      return Array.from(new Set(configIncluirExcluir.globalExcludeGlob));
     }
   }
 
@@ -191,9 +142,7 @@ export function getDefaultExcludes(
  * 2. doutor.config.json
  * 3. Padrões do sistema (fallback)
  */
-export function processarFiltros(
-  opcoes: OpcoesProcessamentoFiltros,
-): FiltrosProcessados {
+export function processarFiltros(opcoes: OpcoesProcessamentoFiltros): FiltrosProcessados {
   const tipoProjeto = detectarTipoProjeto();
 
   // Processar includes
@@ -205,37 +154,36 @@ export function processarFiltros(
   const excludeFlat = processPatternListAchatado(opcoes.exclude);
 
   // Determinar padrões de exclusão finais
-  let excludePatterns: string[];
+  let excludePadroes: string[];
   if (excludeFlat.length > 0) {
     // CLI tem precedência
-    excludePatterns = excludeFlat;
+    excludePadroes = excludeFlat;
   } else {
     // Usar defaults do config ou sistema
-    excludePatterns = getDefaultExcludes(tipoProjeto);
+    excludePadroes = getDefaultExcludes(tipoProjeto);
   }
 
   // Verificar se node_modules deve ser incluído
   let incluiNodeModules = opcoes.forceIncludeNodeModules || false;
-  if (includeFlat.some((p) => /node_modules/.test(p))) {
+  if (includeFlat.some(p => /node_modules/.test(p))) {
     incluiNodeModules = true;
   }
 
   // Remover node_modules dos excludes se explicitamente incluído
   if (incluiNodeModules) {
-    excludePatterns = excludePatterns.filter((p) => !/node_modules/.test(p));
+    excludePadroes = excludePadroes.filter(p => !/node_modules/.test(p));
   }
 
   // Processar flag de testes
-  if (opcoes.forceIncludeTests && !includeFlat.some((p) => /tests?/.test(p))) {
+  if (opcoes.forceIncludeTests && !includeFlat.some(p => /tests?/.test(p))) {
     includeExpanded.push('tests/**', 'test/**', '**/*.test.*', '**/*.spec.*');
   }
-
   return {
     includeGroups,
     includeFlat: includeExpanded,
-    excludePatterns,
+    excludePadroes,
     incluiNodeModules,
-    tipoProjeto,
+    tipoProjeto
   };
 }
 
@@ -253,15 +201,13 @@ export function aplicarFiltrosAoConfig(filtros: FiltrosProcessados): void {
   }
 
   // Configurar excludes
-  config.CLI_EXCLUDE_PATTERNS = filtros.excludePatterns;
+  config.CLI_EXCLUDE_PATTERNS = filtros.excludePadroes;
 }
 
 /**
  * API simplificada: processa e aplica filtros em uma única chamada
  */
-export function configurarFiltros(
-  opcoes: OpcoesProcessamentoFiltros,
-): FiltrosProcessados {
+export function configurarFiltros(opcoes: OpcoesProcessamentoFiltros): FiltrosProcessados {
   const filtros = processarFiltros(opcoes);
   aplicarFiltrosAoConfig(filtros);
   return filtros;

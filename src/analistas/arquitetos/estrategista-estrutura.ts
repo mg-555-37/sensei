@@ -1,21 +1,10 @@
 // SPDX-License-Identifier: MIT
 import { statSync } from 'node:fs';
 import path from 'node:path';
-
 import { getTypesDirectoryRelPosix } from '@core/config/conventions.js';
 import type { OpcoesEstrategista } from '@shared/helpers/estrutura.js';
-import {
-  carregarConfigEstrategia,
-  destinoPara,
-  deveIgnorar,
-  normalizarRel,
-} from '@shared/helpers/estrutura.js';
-
-import type {
-  ContextoExecucao,
-  PlanoMoverItem,
-  PlanoSugestaoEstrutura,
-} from '@';
+import { carregarConfigEstrategia, destinoPara, deveIgnorar, normalizarRel } from '@shared/helpers/estrutura.js';
+import type { ContextoExecucao, PlanoMoverItem, PlanoSugestaoEstrutura } from '@';
 
 /**
  * Estrategista/Planejador de Estrutura
@@ -27,30 +16,22 @@ import type {
  * Domínio ideal: arquitetos (diagnóstico/planejamento). A execução fica com zeladores.
  */
 
-export async function gerarPlanoEstrategico(
-  contexto: Pick<ContextoExecucao, 'arquivos' | 'baseDir'>,
-  opcoes: OpcoesEstrategista = {},
-  sinaisAvancados?: import('@').SinaisProjetoAvancados,
-): Promise<PlanoSugestaoEstrutura> {
+export async function gerarPlanoEstrategico(contexto: Pick<ContextoExecucao, 'arquivos' | 'baseDir'>, opcoes: OpcoesEstrategista = {}, sinaisAvancados?: import('@').SinaisProjetoAvancados): Promise<PlanoSugestaoEstrutura> {
   const typesDir = getTypesDirectoryRelPosix();
   const cfg = await carregarConfigEstrategia(contexto.baseDir, {
     ...opcoes,
-    ignorarPastas: Array.from(
-      new Set([...(opcoes.ignorarPastas || []), typesDir]),
-    ).filter(Boolean),
+    ignorarPastas: Array.from(new Set([...(opcoes.ignorarPastas || []), typesDir])).filter(Boolean)
   });
   const mover: PlanoMoverItem[] = [];
-  const conflitos: { alvo: string; motivo: string }[] = [];
+  const conflitos: {
+    alvo: string;
+    motivo: string;
+  }[] = [];
 
   // Estratégia atual: heurística de nomeação + config/preset (sem consultar arquétipos aqui para evitar ciclos)
 
-  const rels = contexto.arquivos.map((f) => normalizarRel(f.relPath));
-
-  const isTestLike = (p: string): boolean =>
-    /__(tests|mocks)__/.test(p) ||
-    /\.(test|spec)\.[jt]sx?$/.test(p) ||
-    /fixtures\//.test(p);
-
+  const rels = contexto.arquivos.map(f => normalizarRel(f.relPath));
+  const isTestLike = (p: string): boolean => /__(tests|mocks)__/.test(p) || /\.(test|spec)\.[jt]sx?$/.test(p) || /fixtures\//.test(p);
   for (const rel of rels) {
     if (deveIgnorar(rel, cfg.ignorarPastas)) continue;
     if (isTestLike(rel)) continue; // não mover testes/fixtures
@@ -60,40 +41,21 @@ export async function gerarPlanoEstrategico(
     // Respeita convenções de ferramentas no root: não mover configs globais
     const base = path.posix.basename(rel);
     if (/^(eslint|vitest)\.config\.[jt]s$/i.test(base)) continue;
-
-    const res = destinoPara(
-      rel,
-      cfg.raizCodigo,
-      cfg.criarSubpastasPorEntidade,
-      cfg.apenasCategoriasConfiguradas,
-      cfg.categoriasMapa,
-    );
+    const res = destinoPara(rel, cfg.raizCodigo, cfg.criarSubpastasPorEntidade, cfg.apenasCategoriasConfiguradas, cfg.categoriasMapa);
     if (!res.destinoDir) continue;
-
     const currentDir = path.posix.dirname(rel);
-    const alreadyInTarget =
-      currentDir === res.destinoDir ||
-      currentDir.startsWith(`${res.destinoDir}/`);
+    const alreadyInTarget = currentDir === res.destinoDir || currentDir.startsWith(`${res.destinoDir}/`);
     if (alreadyInTarget) continue;
 
     // 🚀 INTELIGÊNCIA CONTEXTUAL: Ajustar destino baseado em sinais avançados
     let destinoDirAjustado = res.destinoDir;
     const motivoAjustado = res.motivo || 'Reorganização padrão';
-
     if (sinaisAvancados) {
-      destinoDirAjustado = ajustarDestinoPorSinais(
-        rel,
-        res.destinoDir,
-        sinaisAvancados,
-        motivoAjustado,
-      );
+      destinoDirAjustado = ajustarDestinoPorSinais(rel, res.destinoDir, sinaisAvancados, motivoAjustado);
     }
 
     // Mantém o mesmo nome do arquivo; apenas move para pasta de destino
-    const destino = path.posix.join(
-      destinoDirAjustado,
-      path.posix.basename(rel),
-    );
+    const destino = path.posix.join(destinoDirAjustado, path.posix.basename(rel));
     // Conflito se já existe arquivo listado ou presente no filesystem
     let destinoExiste = rels.includes(destino);
     if (!destinoExiste) {
@@ -107,41 +69,42 @@ export async function gerarPlanoEstrategico(
       }
     }
     if (destinoExiste) {
-      conflitos.push({ alvo: destino, motivo: 'destino já existe' });
+      conflitos.push({
+        alvo: destino,
+        motivo: 'destino já existe'
+      });
       continue;
     }
-    mover.push({ de: rel, para: destino, motivo: motivoAjustado });
+    mover.push({
+      de: rel,
+      para: destino,
+      motivo: motivoAjustado
+    });
   }
 
   // Deduplicação simples
   const seen = new Set<string>();
-  const moverFiltrado = mover.filter((migracao) => {
-    const migrationKey = `${migracao.de}→${migracao.para}`;
-    if (seen.has(migrationKey)) return false;
-    seen.add(migrationKey);
+  const moverFiltrado = mover.filter(migracao => {
+    const migrationChave = `${migracao.de}→${migracao.para}`;
+    if (seen.has(migrationChave)) return false;
+    seen.add(migrationChave);
     return true;
   });
-
   return {
     mover: moverFiltrado,
     conflitos,
     resumo: {
       total: moverFiltrado.length + conflitos.length,
       zonaVerde: moverFiltrado.length,
-      bloqueados: conflitos.length,
-    },
+      bloqueados: conflitos.length
+    }
   };
 }
 
 /**
  * Ajusta o destino de um arquivo baseado nos sinais avançados do projeto
  */
-function ajustarDestinoPorSinais(
-  relPath: string,
-  destinoOriginal: string,
-  sinais: import('@').SinaisProjetoAvancados,
-  motivoOriginal: string,
-): string {
+function ajustarDestinoPorSinais(relPath: string, destinoOriginal: string, sinais: import('@').SinaisProjetoAvancados, motivoOriginal: string): string {
   let destino = destinoOriginal;
   let _motivo = motivoOriginal;
 
@@ -157,7 +120,6 @@ function ajustarDestinoPorSinais(
           }
         }
         break;
-
       case 'frontend-framework':
         // Para frontend, manter componentes organizados
         if (relPath.includes('component') && !destino.includes('components')) {
@@ -165,7 +127,6 @@ function ajustarDestinoPorSinais(
           _motivo += ' | Ajustado para estrutura frontend típica';
         }
         break;
-
       case 'cli-tool':
         // Para CLI, manter binários e comandos organizados
         if (relPath.includes('cli') || relPath.includes('command')) {
@@ -173,7 +134,6 @@ function ajustarDestinoPorSinais(
           _motivo += ' | Ajustado para estrutura CLI típica';
         }
         break;
-
       case 'library':
         // Para bibliotecas, focar em exports e tipos
         if (relPath.includes('index') || relPath.includes('export')) {
@@ -195,7 +155,6 @@ function ajustarDestinoPorSinais(
       _motivo += ' | Padrão Repository/Service detectado';
     }
   }
-
   if (sinais.padroesArquiteturais.includes('cli-patterns')) {
     if (relPath.includes('command') && !destino.includes('commands')) {
       destino = 'src/commands';
@@ -214,10 +173,7 @@ function ajustarDestinoPorSinais(
   // Ajustes baseados na complexidade estrutural
   if (sinais.complexidadeEstrutura === 'alta') {
     // Para projetos complexos, criar subpastas por domínio
-    const nomeArquivo = path.posix.basename(
-      relPath,
-      path.posix.extname(relPath),
-    );
+    const nomeArquivo = path.posix.basename(relPath, path.posix.extname(relPath));
     if (nomeArquivo.length > 3) {
       // Tentar inferir domínio do nome do arquivo
       const dominioInferido = inferirDominio(nomeArquivo);
@@ -227,7 +183,6 @@ function ajustarDestinoPorSinais(
       }
     }
   }
-
   return destino;
 }
 
@@ -242,20 +197,17 @@ function inferirDominio(nomeArquivo: string): string | null {
     order: ['order', 'cart', 'purchase', 'sale'],
     notification: ['notification', 'email', 'message', 'alert'],
     report: ['report', 'analytics', 'metric', 'dashboard'],
-    admin: ['admin', 'management', 'config', 'setting'],
+    admin: ['admin', 'management', 'config', 'setting']
   };
-
   const nomeLower = nomeArquivo.toLowerCase();
   for (const [dominio, palavras] of Object.entries(padroesDominio)) {
-    if (palavras.some((palavra) => nomeLower.includes(palavra))) {
+    if (palavras.some(palavra => nomeLower.includes(palavra))) {
       return dominio;
     }
   }
-
   return null;
 }
-
 export const EstrategistaEstrutura = {
   nome: 'estrategista-estrutura',
-  gerarPlano: gerarPlanoEstrategico,
+  gerarPlano: gerarPlanoEstrategico
 };

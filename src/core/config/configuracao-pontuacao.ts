@@ -16,33 +16,36 @@ export const CONFIGURACAO_PADRAO: ConfiguracaoPontuacao = {
   PESO_OPTIONAL: 5,
   PESO_REQUIRED: 10,
   PESO_DEPENDENCIA: 10,
-  PESO_PATTERN: 5,
+  PESO_PADRAO: 5,
   PENALIDADE_FORBIDDEN: 20,
-
   // Fatores adaptativos (máximos)
-  FATOR_ESCALA_TAMANHO_MAX: 5, // 5x para projetos muito grandes
-  FATOR_COMPLEXIDADE_MAX: 3, // 3x para projetos muito complexos
-  FATOR_MATURIDADE_MAX: 3, // 3x para projetos muito maduros
+  FATOR_ESCALA_TAMANHO_MAX: 5,
+  // 5x para projetos muito grandes
+  FATOR_COMPLEXIDADE_MAX: 3,
+  // 3x para projetos muito complexos
+  FATOR_MATURIDADE_MAX: 3,
+  // 3x para projetos muito maduros
 
   // Thresholds de decisão
-  THRESHOLD_CONFIANCA_MINIMA: 30, // Mínimo para considerar válido
-  THRESHOLD_DIFERENCA_DOMINANTE: 15, // Diferença para considerar dominante
-  THRESHOLD_HIBRIDO_REAL: 0.3, // Fração de sobreposição para híbrido
+  THRESHOLD_CONFIANCA_MINIMA: 30,
+  // Mínimo para considerar válido
+  THRESHOLD_DIFERENCA_DOMINANTE: 15,
+  // Diferença para considerar dominante
+  THRESHOLD_HIBRIDO_REAL: 0.3,
+  // Fração de sobreposição para híbrido
 
   // Bônus e penalidades
   BONUS_COMPLETUDE_BASE: 50,
   BONUS_ESPECIFICIDADE_MULTIPLIER: 1.5,
   PENALIDADE_GENERICO_EXTREMA: 1000,
-
   // Ajustes por tamanho
   AJUSTE_CONFIANCA_PROJETO_GRANDE: -5,
   AJUSTE_CONFIANCA_PROJETO_PEQUENO: 10,
   LIMITE_ARQUIVOS_GRANDE: 500,
   LIMITE_ARQUIVOS_PEQUENO: 20,
-
   // Sistema de maturidade
   LIMITE_FUNCOES_MATURIDADE: 50,
-  MULTIPLICADOR_MATURIDADE: 1.2,
+  MULTIPLICADOR_MATURIDADE: 1.2
 };
 
 // Configuração conservadora - mais rigorosa
@@ -51,7 +54,7 @@ export const CONFIGURACAO_CONSERVADORA: ConfiguracaoPontuacao = {
   THRESHOLD_CONFIANCA_MINIMA: 40,
   THRESHOLD_DIFERENCA_DOMINANTE: 20,
   PENALIDADE_MISSING_REQUIRED: 25,
-  BONUS_COMPLETUDE_BASE: 40,
+  BONUS_COMPLETUDE_BASE: 40
 };
 
 // Configuração permissiva - mais tolerante
@@ -60,13 +63,12 @@ export const CONFIGURACAO_PERMISSIVA: ConfiguracaoPontuacao = {
   THRESHOLD_CONFIANCA_MINIMA: 20,
   THRESHOLD_DIFERENCA_DOMINANTE: 10,
   PENALIDADE_MISSING_REQUIRED: 15,
-  BONUS_COMPLETUDE_BASE: 60,
+  BONUS_COMPLETUDE_BASE: 60
 };
 
 // Função para obter a configuração atual baseada na variável de ambiente
 export function obterConfiguracaoAtual(): ConfiguracaoPontuacao {
   const modo = process.env.DOUTOR_MODO_PONTUACAO || 'padrao';
-
   switch (modo.toLowerCase()) {
     case 'conservador':
     case 'strict':

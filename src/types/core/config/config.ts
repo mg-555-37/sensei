@@ -14,18 +14,13 @@ export interface AutoFixConfig {
   // minimal confidence required (0-100)
   minConfidence?: number;
   // categories allowed
-  allowedCategories?: (
-    | 'security'
-    | 'performance'
-    | 'style'
-    | 'documentation'
-  )[];
+  allowedCategories?: ('security' | 'performance' | 'style' | 'documentation')[];
   // file glob patterns to exclude
-  excludePatterns?: string[];
+  excludePadroes?: string[];
   // function name patterns to exclude
   excludeFunctionPatterns?: string[];
   // max fixes per file
-  maxFixesPerFile?: number;
+  maxFixesPerArquivo?: number;
   // create backup before modifying
   createBackup?: boolean;
   // validate after fix
@@ -48,12 +43,7 @@ export interface PatternBasedQuickFix {
   fix: (match: RegExpMatchArray, fullCode: string) => string;
   category: 'security' | 'performance' | 'style' | 'documentation';
   confidence: number;
-  shouldApply?: (
-    match: RegExpMatchArray,
-    fullCode: string,
-    lineContext: string,
-    filePath?: string,
-  ) => boolean;
+  shouldApply?: (match: RegExpMatchArray, fullCode: string, lineContext: string, fileCaminho?: string) => boolean;
 }
 
 /**
@@ -76,7 +66,7 @@ export interface ConfiguracaoPontuacao {
   PESO_OPTIONAL: number;
   PESO_REQUIRED: number;
   PESO_DEPENDENCIA: number;
-  PESO_PATTERN: number;
+  PESO_PADRAO: number;
   PENALIDADE_FORBIDDEN: number;
 
   // Fatores adaptativos

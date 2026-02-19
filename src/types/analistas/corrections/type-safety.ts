@@ -17,17 +17,19 @@ export interface ASTNode {
   callee?: ASTNode;
   value?: unknown;
   loc?: {
-    start?: { line?: number; column?: number };
+    start?: {
+      line?: number;
+      column?: number;
+    };
   };
   [key: string]: unknown;
 }
-
 export interface TypeAnalysis {
   /** Confiança na inferência do tipo (0-100) */
   confidence: number;
 
   /** Tipo inferido a partir da análise */
-  inferredType: string;
+  inferredTipo: string;
 
   /** Se é tipo primitivo (string, number, boolean, etc) */
   isSimpleType: boolean;
@@ -50,7 +52,6 @@ export interface TypeAnalysis {
   /** Se requer import */
   requiresImport?: boolean;
 }
-
 export interface UsagePattern {
   /** Todos os usos são de string */
   allUsagesAreString: boolean;
@@ -82,13 +83,12 @@ export interface UsagePattern {
   /** Tipos encontrados em uniões */
   unionTypes?: string[];
 }
-
 export interface PropertyUsage {
   /** Nome da propriedade */
   name: string;
 
   /** Tipo inferido da propriedade */
-  inferredType: string;
+  inferredTipo: string;
 
   /** Confiança na inferência */
   confidence: number;
@@ -99,7 +99,6 @@ export interface PropertyUsage {
   /** Métodos chamados nesta propriedade */
   methodsCalled?: string[];
 }
-
 export interface TypeGuard {
   /** Tipo do guard (typeof, instanceof, in, custom) */
   type: 'typeof' | 'instanceof' | 'in' | 'custom';
@@ -108,12 +107,11 @@ export interface TypeGuard {
   expression: string;
 
   /** Tipo inferido do guard */
-  inferredType: string;
+  inferredTipo: string;
 
   /** Confiança no guard */
   confidence: number;
 }
-
 export interface InferredInterface {
   /** Nome da interface */
   name: string;
@@ -127,7 +125,6 @@ export interface InferredInterface {
   /** Propriedades da interface */
   properties: PropertyUsage[];
 }
-
 export interface TypeReplacementValidation {
   /** Se o tipo é compatível com os usos */
   isCompatible: boolean;
@@ -141,7 +138,6 @@ export interface TypeReplacementValidation {
   /** Avisos */
   warnings: string[];
 }
-
 export interface AdditionalChange {
   /** Tipo de mudança adicional */
   type: 'add-import' | 'create-type-file' | 'update-index' | 'add-type-guard';
@@ -152,7 +148,6 @@ export interface AdditionalChange {
   /** Caminho do arquivo afetado (para create-type-file) */
   path?: string;
 }
-
 export interface TypeSafetyWarning {
   /** Tipo do aviso */
   type: 'type-suggestion' | 'unsafe-type' | 'keep-unknown' | 'duplicate-type';
@@ -172,7 +167,6 @@ export interface TypeSafetyWarning {
   /** Caminho do arquivo com tipo conflitante */
   conflictingTypePath?: string;
 }
-
 export interface QuickFixResult {
   /** Código modificado */
   code: string;
@@ -189,7 +183,6 @@ export interface QuickFixResult {
   /** Motivo de não aplicação */
   reason?: string;
 }
-
 export interface VariableUsage {
   /** Nome da variável */
   name: string;
@@ -207,13 +200,7 @@ export interface VariableUsage {
   context: string;
 
   /** Operação realizada (call, access, assignment, etc) */
-  operation:
-    | 'call'
-    | 'access'
-    | 'assignment'
-    | 'comparison'
-    | 'return'
-    | 'argument';
+  operation: 'call' | 'access' | 'assignment' | 'comparison' | 'return' | 'argument';
 
   /** Propriedade acessada (se aplicável) */
   property?: string;
@@ -224,10 +211,9 @@ export interface VariableUsage {
   /** Argumento de função (se aplicável) */
   argumentIndex?: number;
 }
-
 export interface TypeInferenceContext {
   /** Arquivo sendo analisado */
-  filePath: string;
+  fileCaminho: string;
 
   /** Domínio do arquivo (analistas, cli, core, etc) */
   domain: string;
@@ -247,7 +233,6 @@ export interface TypeInferenceContext {
   /** Código completo */
   code: string;
 }
-
 export interface ExistingType {
   /** Nome do tipo */
   name: string;
