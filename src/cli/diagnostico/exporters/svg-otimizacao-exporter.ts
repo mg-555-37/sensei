@@ -28,6 +28,12 @@ export type SvgExportResult = {
   totalEconomiaBytes: number;
 };
 
+type SvgDirectoryStats = {
+  count: number;
+  totalSaved: number;
+  exemplos: SvgCandidate[];
+};
+
 function formatBytes(bytes: number): string {
   if (!Number.isFinite(bytes) || bytes < 0) return String(bytes);
   if (bytes < 1024) return `${bytes}B`;
@@ -80,10 +86,7 @@ export async function exportarRelatorioSvgOtimizacao(params: {
     0,
   );
 
-  const porDir = new Map<
-    string,
-    { count: number; totalSaved: number; exemplos: typeof candidatos }
-  >();
+  const porDir = new Map<string, SvgDirectoryStats>();
   for (const c of candidatos) {
     const key = c.dir;
     const existing = porDir.get(key);

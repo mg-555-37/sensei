@@ -24,16 +24,29 @@ import { criarOcorrencia } from '@';
 // Cache de frameworks detectados (evita múltiplas leituras do package.json)
 let frameworksDetectados: string[] | null = null;
 
+const LIMITES = {
+  LINHAS_FUNCAO: 30,
+  PARAMETROS_FUNCAO: 4,
+  MAX_PARAMETROS_CRITICO: 6,
+  CALLBACKS_ANINHADOS: 2,
+  COMPLEXIDADE_COGNITIVA: 15,
+  REGEX_COMPLEXA_LENGTH: 50,
+} as const;
+
 export const analistaCodigoFragil: Analista = {
   nome: 'codigo-fragil',
   categoria: 'qualidade',
   descricao: 'Detecta padrões de código que podem levar a problemas futuros',
   limites: {
     maxLinhasFuncao:
-      config.ANALISE_LIMITES?.CODIGO_FRAGIL?.MAX_LINHAS_FUNCAO ?? 30,
-    maxParametros: config.ANALISE_LIMITES?.CODIGO_FRAGIL?.MAX_PARAMETROS ?? 4,
+      config.ANALISE_LIMITES?.CODIGO_FRAGIL?.MAX_LINHAS_FUNCAO ??
+      LIMITES.LINHAS_FUNCAO,
+    maxParametros:
+      config.ANALISE_LIMITES?.CODIGO_FRAGIL?.MAX_PARAMETROS ??
+      LIMITES.PARAMETROS_FUNCAO,
     maxNestedCallbacks:
-      config.ANALISE_LIMITES?.CODIGO_FRAGIL?.MAX_NESTED_CALLBACKS ?? 2,
+      config.ANALISE_LIMITES?.CODIGO_FRAGIL?.MAX_NESTED_CALLBACKS ??
+      LIMITES.CALLBACKS_ANINHADOS,
   },
 
   test: (relPath: string): boolean => {
@@ -59,11 +72,14 @@ export const analistaCodigoFragil: Analista = {
 
     // Limites efetivos (lidos dinamicamente para respeitar overrides por env/config)
     const maxLinhasFuncao =
-      config.ANALISE_LIMITES?.CODIGO_FRAGIL?.MAX_LINHAS_FUNCAO ?? 30;
+      config.ANALISE_LIMITES?.CODIGO_FRAGIL?.MAX_LINHAS_FUNCAO ??
+      LIMITES.LINHAS_FUNCAO;
     const maxParametros =
-      config.ANALISE_LIMITES?.CODIGO_FRAGIL?.MAX_PARAMETROS ?? 4;
+      config.ANALISE_LIMITES?.CODIGO_FRAGIL?.MAX_PARAMETROS ??
+      LIMITES.PARAMETROS_FUNCAO;
     const maxNestedCallbacks =
-      config.ANALISE_LIMITES?.CODIGO_FRAGIL?.MAX_NESTED_CALLBACKS ?? 2;
+      config.ANALISE_LIMITES?.CODIGO_FRAGIL?.MAX_NESTED_CALLBACKS ??
+      LIMITES.CALLBACKS_ANINHADOS;
 
     const fragilidades: Fragilidade[] = [];
 
@@ -129,10 +145,10 @@ export const analistaCodigoFragil: Analista = {
                 coluna: node.loc?.start.column || 0,
                 severidade:
                   numLinhas >
-                  Math.max(
-                    maxLinhasFuncao + 20,
-                    Math.floor(maxLinhasFuncao * 1.7),
-                  )
+                    Math.max(
+                      maxLinhasFuncao + 20,
+                      Math.floor(maxLinhasFuncao * 1.7),
+                    )
                     ? 'alta'
                     : 'media',
                 contexto: `Função com ${numLinhas} linhas (máx: ${maxLinhasFuncao})`,
@@ -149,7 +165,7 @@ export const analistaCodigoFragil: Analista = {
               coluna: node.loc?.start.column || 0,
               severidade:
                 numParams >
-                Math.max(maxParametros + 2, Math.floor(maxParametros * 1.5))
+                  Math.max(maxParametros + 2, Math.floor(maxParametros * 1.5))
                   ? 'alta'
                   : 'media',
               contexto: `Função com ${numParams} parâmetros (máx: ${maxParametros})`,
@@ -171,10 +187,10 @@ export const analistaCodigoFragil: Analista = {
                 coluna: node.loc?.start.column || 0,
                 severidade:
                   numLinhas >
-                  Math.max(
-                    maxLinhasFuncao + 20,
-                    Math.floor(maxLinhasFuncao * 1.7),
-                  )
+                    Math.max(
+                      maxLinhasFuncao + 20,
+                      Math.floor(maxLinhasFuncao * 1.7),
+                    )
                     ? 'alta'
                     : 'media',
                 contexto: `Arrow function com ${numLinhas} linhas (máx: ${maxLinhasFuncao})`,
@@ -197,10 +213,10 @@ export const analistaCodigoFragil: Analista = {
                 coluna: node.loc?.start.column || 0,
                 severidade:
                   numLinhas >
-                  Math.max(
-                    maxLinhasFuncao + 20,
-                    Math.floor(maxLinhasFuncao * 1.7),
-                  )
+                    Math.max(
+                      maxLinhasFuncao + 20,
+                      Math.floor(maxLinhasFuncao * 1.7),
+                    )
                     ? 'alta'
                     : 'media',
                 contexto: `Function expression com ${numLinhas} linhas (máx: ${maxLinhasFuncao})`,
@@ -245,12 +261,13 @@ export const analistaCodigoFragil: Analista = {
           const numParams =
             node.params && Array.isArray(node.params) ? node.params.length : 0;
 
-          if (numParams > 4) {
+          if (numParams > LIMITES.PARAMETROS_FUNCAO) {
             fragilidades.push({
               tipo: 'muitos-parametros',
               linha: node.loc?.start.line || 0,
               coluna: node.loc?.start.column || 0,
-              severidade: numParams > 6 ? 'alta' : 'media',
+              severidade:
+                numParams > LIMITES.MAX_PARAMETROS_CRITICO ? 'alta' : 'media',
               contexto: `Método com ${numParams} parâmetros`,
             });
           }
@@ -439,7 +456,7 @@ function detectarProblemasAvancados(
     const regexMatch = line.match(/\/([^\/\\]|\\.)+\/[gimuy]*/);
     if (
       regexMatch &&
-      regexMatch[0].length > 50 &&
+      regexMatch[0].length > LIMITES.REGEX_COMPLEXA_LENGTH &&
       (regexMatch[0].match(/\(/g) || []).length > 3
     ) {
       fragilidades.push({
@@ -494,7 +511,7 @@ function detectarComplexidadeCognitiva(
         trimmedLine,
       )
     ) {
-      if (complexityScore > 15) {
+      if (complexityScore > LIMITES.COMPLEXIDADE_COGNITIVA) {
         // Threshold mais alto que funções longas
         fragilidades.push({
           tipo: 'cognitive-complexity',
@@ -545,7 +562,7 @@ function detectarComplexidadeCognitiva(
   }
 
   // Verificar última função
-  if (complexityScore > 15) {
+  if (complexityScore > LIMITES.COMPLEXIDADE_COGNITIVA) {
     fragilidades.push({
       tipo: 'cognitive-complexity',
       linha: functionStartLine,

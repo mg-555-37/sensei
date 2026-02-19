@@ -1,32 +1,43 @@
 // SPDX-License-Identifier: MIT
 import type { DiagnosticoProjeto, SinaisProjeto } from '@';
 
+// Níveis de confiança para detecção de tipos de projeto
+const CONFIANCA = {
+  PADRAO: 0.3,
+  FULLSTACK: 0.95,
+  MONOREPO: 0.99,
+  LANDING: 0.92,
+  API: 0.88,
+  CLI: 0.85,
+  LIB: 0.8,
+} as const;
+
 export function diagnosticarProjeto(sinais: SinaisProjeto): DiagnosticoProjeto {
   const positivos = Object.entries(sinais)
     .filter(([, valor]) => valor === true)
     .map(([chave]) => chave as keyof SinaisProjeto);
 
   let tipo: DiagnosticoProjeto['tipo'] = 'desconhecido';
-  let confianca = 0.3;
+  let confianca: number = CONFIANCA.PADRAO;
 
   if ('ehFullstack' in sinais && sinais.ehFullstack) {
     tipo = 'fullstack';
-    confianca = 0.95;
+    confianca = CONFIANCA.FULLSTACK;
   } else if ('ehMonorepo' in sinais && sinais.ehMonorepo) {
     tipo = 'monorepo';
-    confianca = 0.99;
+    confianca = CONFIANCA.MONOREPO;
   } else if (ehLanding(sinais)) {
     tipo = 'landing';
-    confianca = 0.92;
+    confianca = CONFIANCA.LANDING;
   } else if (ehApi(sinais)) {
     tipo = 'api';
-    confianca = 0.88;
+    confianca = CONFIANCA.API;
   } else if (ehCli(sinais)) {
     tipo = 'cli';
-    confianca = 0.85;
+    confianca = CONFIANCA.CLI;
   } else if (ehLib(sinais)) {
     tipo = 'lib';
-    confianca = 0.8;
+    confianca = CONFIANCA.LIB;
   }
 
   // Mantém valor de confiança original (0..1) sem arredondar para evitar perda de precisão

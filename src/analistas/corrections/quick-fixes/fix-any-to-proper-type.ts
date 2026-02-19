@@ -20,13 +20,19 @@ import { analyzeTypeUsage } from '../type-safety/type-analyzer.js';
 import { createTypeDefinition } from '../type-safety/type-creator.js';
 import { validateTypeReplacement } from '../type-safety/type-validator.js';
 
+const CONFIDENCE_LEVELS = {
+  HIGH: 85,
+  MEDIUM: 60,
+  DEFAULT: 70,
+} as const;
+
 export const fixAnyToProperType: QuickFix = {
   id: 'fix-any-to-proper-type',
   title: MENSAGENS_FIX_TYPES.fixAny.title,
   description: MENSAGENS_FIX_TYPES.fixAny.description,
   pattern: /:\s*any\b/g,
   category: 'style', // Type safety é considerado 'style' pois não afeta execução
-  confidence: 70, // Média - requer análise contextual
+  confidence: CONFIDENCE_LEVELS.DEFAULT, // Média - requer análise contextual
 
   shouldApply: (
     match: RegExpMatchArray,
@@ -83,7 +89,7 @@ export async function fixAnyToProperTypeAsync(
     const typeAnalysis = await analyzeTypeUsage(match, fullCode, filePath, ast);
 
     // 2. Estratégia baseada em confiança
-    if (typeAnalysis.confidence >= 85) {
+    if (typeAnalysis.confidence >= CONFIDENCE_LEVELS.HIGH) {
       // ALTA CONFIANÇA: Aplicar tipo automaticamente
 
       if (typeAnalysis.isSimpleType) {
@@ -166,7 +172,7 @@ export async function fixAnyToProperTypeAsync(
           ],
         };
       }
-    } else if (typeAnalysis.confidence >= 60) {
+    } else if (typeAnalysis.confidence >= CONFIDENCE_LEVELS.MEDIUM) {
       // MÉDIA CONFIANÇA: Sugerir mas não aplicar
       const warning: TypeSafetyWarning = {
         type: 'type-suggestion',

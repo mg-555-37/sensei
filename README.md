@@ -18,9 +18,6 @@
 >
 > Recomendamos que aguarde feedback e validação antes de depender desta ferramenta.
 
-> Eu vou fazer uma pausa com o Doutor, a versão gratuita do copilot não fica muito bom não, vou só empilhar um pouco de arquivos e depois refino.
->
-
 ---
 
 [![CI](https://github.com/md-555/doutor/actions/workflows/ci.yml?badge.svg?branch=main)](https://github.com/md-555/doutor/actions/workflows/ci.yml)

@@ -227,6 +227,10 @@ export const registroAnalistas: (Analista | Tecnica)[] = [
   ...(analistaCorrecaoAutomatica ? [analistaCorrecaoAutomatica] : []),
 ];
 
+/**
+ * Lista todos os analistas registrados no sistema
+ * Retorna metadados básicos para exibição (CLI, Relatórios)
+ */
 export function listarAnalistas(): InfoAnalista[] {
   return registroAnalistas.map((a) => ({
     nome: (a as Analista).nome || 'desconhecido',

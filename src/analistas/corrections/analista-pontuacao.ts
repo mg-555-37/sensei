@@ -18,16 +18,22 @@ import { criarOcorrencia } from '@';
   /* -------------------------- Helpers / Config -------------------------- */
 
 // Constantes de limites e valores de threshold
-const ASCII_EXTENDED_MIN = 128;
-const LIMITE_CARACTERES_INCOMUNS_PADRAO = 10;
-const ESPACAMENTO_CORRECAO_COUNT = 1;
-const _CONTEXTO_TYPESCRIPT_LOOKBACK = 50;
-const _CONTEXTO_TYPESCRIPT_LOOKAHEAD = 50;
-const _MIN_CONFIANCA_ALTA = 80;
-const CONFIANCA_UNICODE = 90;
-const CONFIANCA_PONTUACAO = 95;
-const CONFIANCA_ESPACAMENTO = 85;
-const CONFIANCA_CARACTERES_INCOMUNS = 70;
+// Constantes de limites e valores de threshold
+const LIMITES = {
+  ASCII_EXTENDED_MIN: 128,
+  CARACTERES_INCOMUNS_PADRAO: 10,
+  ESPACAMENTO_CORRECAO_COUNT: 1,
+  CONTEXTO_TYPESCRIPT_LOOKBACK: 50,
+  CONTEXTO_TYPESCRIPT_LOOKAHEAD: 50,
+} as const;
+
+const CONFIANCA = {
+  MIN_ALTA: 80,
+  UNICODE: 90,
+  PONTUACAO: 95,
+  ESPACAMENTO: 85,
+  CARACTERES_INCOMUNS: 70,
+} as const;
 
 const COMMON_REPLACEMENTS: Record<string, string> = {
   '\u201c': '"',
@@ -61,7 +67,7 @@ const CONFIGURACAO_PADRAO: ConfiguracaoPontuacaoZelador = {
   corrigirEspacamento: true,
   balancearParenteses: false,
   detectarCaracteresIncomuns: true,
-  limiteCaracteresIncomuns: LIMITE_CARACTERES_INCOMUNS_PADRAO,
+  limiteCaracteresIncomuns: LIMITES.CARACTERES_INCOMUNS_PADRAO,
 };
 
 function normalizeUnicode(input: string): { text: string; changed: boolean } {
@@ -99,7 +105,7 @@ function fixSpacingAroundPunct(s: string): {
   const t1 = s.replace(SPACE_BEFORE_PUNCT_RE, '$1');
   const t2 = t1.replace(NO_SPACE_AFTER_PUNCT_RE, '$1 $2');
   const changed = s !== t2;
-  const count = changed ? ESPACAMENTO_CORRECAO_COUNT : 0;
+  const count = changed ? LIMITES.ESPACAMENTO_CORRECAO_COUNT : 0;
   return { text: t2, changed, count };
 }
 
@@ -115,7 +121,7 @@ function detectUncommonChars(
   ) {
     const ch = text[i];
     const code = ch.codePointAt(0) ?? 0;
-    if (code >= ASCII_EXTENDED_MIN) {
+    if (code >= LIMITES.ASCII_EXTENDED_MIN) {
       const name = (() => {
         try {
           if (typeof Intl !== 'undefined') {
@@ -141,7 +147,7 @@ function detectUncommonChars(
         comprimento: 1,
         descricao: `Caractere incomum: ${ch} (${name || ch})`,
         sugestao: 'Considere substituir por equivalente ASCII',
-        confianca: CONFIANCA_CARACTERES_INCOMUNS,
+        confianca: CONFIANCA.CARACTERES_INCOMUNS,
       });
     }
   }
@@ -163,7 +169,7 @@ function analisarTexto(
         comprimento: src.length,
         descricao: 'Texto contém caracteres Unicode que podem ser normalizados',
         sugestao: 'Aplicar normalização Unicode NFKC',
-        confianca: CONFIANCA_UNICODE,
+        confianca: CONFIANCA.UNICODE,
       });
     }
   }
@@ -177,7 +183,7 @@ function analisarTexto(
         comprimento: src.length,
         descricao: `Encontrados ${collapsed.count} casos de pontuação repetida`,
         sugestao: 'Colapsar pontuação repetida para caracteres únicos',
-        confianca: CONFIANCA_PONTUACAO,
+        confianca: CONFIANCA.PONTUACAO,
       });
     }
   }
@@ -191,7 +197,7 @@ function analisarTexto(
         comprimento: src.length,
         descricao: `Encontrados ${spacing.count} problemas de espaçamento em pontuação`,
         sugestao: 'Corrigir espaçamento antes/depois de pontuação',
-        confianca: CONFIANCA_ESPACAMENTO,
+        confianca: CONFIANCA.ESPACAMENTO,
       });
     }
   }

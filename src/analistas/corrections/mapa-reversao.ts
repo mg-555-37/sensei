@@ -9,6 +9,13 @@ import { lerEstado, salvarEstado } from '@shared/persistence/persistencia.js';
 
 import type { MapaReversao, MoveReversao } from '@';
 
+const CONSTANTES_MAPA = {
+  VERSAO: '1.0.0',
+  ID_LENGTH: 9,
+  ID_OFFSET: 2,
+  RADIX_36: 36,
+} as const;
+
 export class GerenciadorMapaReversao {
   private readonly mapaPath: string;
   private mapa: MapaReversao;
@@ -16,7 +23,7 @@ export class GerenciadorMapaReversao {
   constructor(opts?: { mapaPath?: string }) {
     this.mapaPath = opts?.mapaPath ?? DOUTOR_FILES.MAPA_REVERSAO;
     this.mapa = {
-      versao: '1.0.0',
+      versao: CONSTANTES_MAPA.VERSAO,
       moves: [],
       metadata: {
         totalMoves: 0,
@@ -35,7 +42,7 @@ export class GerenciadorMapaReversao {
         this.mapaPath,
         null,
       )) ?? {
-        versao: '1.0.0',
+        versao: CONSTANTES_MAPA.VERSAO,
         moves: [],
         metadata: { totalMoves: 0, ultimoMove: '', podeReverter: true },
       };
@@ -55,7 +62,7 @@ export class GerenciadorMapaReversao {
         logAuto.mapaReversaoErroCarregar((error as Error).message);
         // Reinicia com mapa vazio em caso de erro
         this.mapa = {
-          versao: '1.0.0',
+          versao: CONSTANTES_MAPA.VERSAO,
           moves: [],
           metadata: {
             totalMoves: 0,
@@ -93,7 +100,9 @@ export class GerenciadorMapaReversao {
     skipSalvar?: boolean,
   ): Promise<string> {
     try {
-      const id = `move_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const id = `move_${Date.now()}_${Math.random()
+        .toString(CONSTANTES_MAPA.RADIX_36)
+        .substr(CONSTANTES_MAPA.ID_OFFSET, CONSTANTES_MAPA.ID_LENGTH)}`;
 
       const move: MoveReversao = {
         id,

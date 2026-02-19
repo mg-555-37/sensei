@@ -451,10 +451,10 @@ function detectarAsyncSemTryCatch(
         continue;
       }
 
-      // Verificar se há try-catch em escopo expandido (20 linhas antes/depois)
+      // Verificar se há try-catch em escopo expandido (100 linhas antes/depois)
       const extendedContext = lines.slice(
-        Math.max(0, i - 20),
-        Math.min(lines.length, i + 10),
+        Math.max(0, i - 100),
+        Math.min(lines.length, i + 100),
       );
       const fullContext = extendedContext.join('\n');
 
