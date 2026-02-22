@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 import { removerArquivosOrfaos } from '@analistas/corrections/poda.js';
+import { registroAnalistas } from '@analistas/registry/registry.js';
 import { exportarRelatoriosPoda } from '@cli/handlers/poda-exporter.js';
 import { ExitCode, sair } from '@cli/helpers/exit-codes.js';
 import { expandIncludePatterns, processPatternList } from '@cli/helpers/pattern-helpers.js';
@@ -11,7 +12,8 @@ import { CliComandoPodarMensagens } from '@core/messages/cli/cli-comando-podar-m
 import { ICONES_DIAGNOSTICO, log, logSistema } from '@core/messages/index.js';
 import { Command } from 'commander';
 
-import type { ArquivoFantasma, ResultadoPoda } from '@';
+import type { ArquivoFantasma, ResultadoPoda, Tecnica } from '@';
+import { asTecnicas } from '@';
 
 export function comandoPodar(aplicarFlagsGlobais: (opts: Record<string, unknown>) => void): Command {
   return new Command('podar').description('Remove arquivos órfãos e lixo do repositório.').option('-f, --force', 'Remove arquivos sem confirmação (CUIDADO!)', false).option('--include <padrao>', 'Glob pattern a INCLUIR (pode repetir a flag ou usar vírgulas / espaços para múltiplos)', (val: string, prev: string[]) => {
@@ -45,11 +47,12 @@ export function comandoPodar(aplicarFlagsGlobais: (opts: Record<string, unknown>
       // 🔥 SIMPLIFICADO: sem sync de padrões obsoletos
       // CLI flags dominam globalExcludeGlob automaticamente
 
+      const tecnicas = asTecnicas(registroAnalistas as Tecnica[]);
       const {
         fileEntries
       } = await iniciarInquisicao(baseDir, {
         incluirMetadados: false
-      });
+      }, tecnicas);
       const resultadoPoda: ResultadoPoda = await removerArquivosOrfaos(fileEntries);
       if (resultadoPoda.arquivosOrfaos.length === 0) {
         log.sucesso(CliComandoPodarMensagens.nenhumaSujeira(ICONES_DIAGNOSTICO.sucesso));

@@ -2,6 +2,7 @@
 // @sensei-disable tipo-literal-inline-complexo
 // Justificativa: tipos inline para opções de comando CLI são locais e não precisam de extração
 import { OperarioEstrutura } from '@analistas/estrategistas/operario-estrutura.js';
+import { registroAnalistas as tecnicas } from '@analistas/registry/registry.js';
 import { exportarRelatoriosReestruturacao } from '@cli/handlers/reestruturacao-exporter.js';
 import { exibirMolduraConflitos, exibirMolduraPlano } from '@cli/helpers/exibir-moldura.js';
 import { ExitCode, sair } from '@cli/helpers/exit-codes.js';
@@ -10,7 +11,6 @@ import chalk from '@core/config/chalk-safe.js';
 import { config } from '@core/config/config.js';
 import { executarInquisicao, prepararComAst } from '@core/execution/inquisidor.js';
 import { CliComandoReestruturarMensagens } from '@core/messages/cli/cli-comando-reestruturar-messages.js';
-import { registroAnalistas as tecnicas } from '@analistas/registry/registry.js';
 import { CABECALHOS, log } from '@core/messages/index.js';
 import { Command } from 'commander';
 import ora from 'ora';
@@ -138,7 +138,7 @@ export function comandoReestruturar(aplicarFlagsGlobais: (opts: Record<string, u
         try {
           const { iniciarInquisicao } = await import('@core/execution/inquisidor.js');
 if (typeof iniciarInquisicao === 'function') {
-  analise = await iniciarInquisicao(baseDir, { skipExec: false });
+  analise = await iniciarInquisicao(baseDir, { skipExec: false }, tecnicas);
 
   if (analise && analise.fileEntries) {
     // Se o resultado tiver fileEntries, é um ResultadoInquisicao completo

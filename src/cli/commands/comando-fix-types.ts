@@ -13,7 +13,7 @@ import { PROJETO_RAIZ } from '@core/registry/paths.js';
 import { Command } from 'commander';
 
 import type { FixTypesOptions, Ocorrencia } from '@';
-import { extrairMensagemErro } from '@';
+import { asTecnicas, extrairMensagemErro } from '@';
 
 export function criarComandoFixTypes(): Command {
   const cmd = new Command('fix-types');
@@ -58,13 +58,19 @@ async function executarFixTypes(options: FixTypesOptions): Promise<void> {
   if (includeList.length) config.CLI_INCLUDE_PATTERNS = includeList;
   if (excludeList.length) config.CLI_EXCLUDE_PATTERNS = excludeList;
 
-  // Importações dinâmicas para evitar dependências circulares
-  const {
-    iniciarInquisicao
-  } = await import('@core/execution/inquisidor.js');
-  const {
-    registroAnalistas
-  } = await import('@analistas/registry/registry.js');
+  // Importações dinâmicas para evitar dependências circulares (try/catch para detector unhandled-async)
+  let iniciarInquisicao: (baseDir: string, opts?: import('@').InquisicaoOptions, tecnicas?: import('@').Tecnica[]) => Promise<import('@').ResultadoInquisicaoCompleto>;
+  let registroAnalistas: (import('@').Analista | import('@').Tecnica)[];
+  try {
+    const modInq = await import('@core/execution/inquisidor.js');
+    const modReg = await import('@analistas/registry/registry.js');
+    iniciarInquisicao = modInq.iniciarInquisicao;
+    registroAnalistas = modReg.registroAnalistas;
+  } catch (err) {
+    log.erro(`Erro ao carregar módulos: ${err instanceof Error ? err.message : String(err)}`);
+    sair(ExitCode.Failure);
+    return;
+  }
 
   // Filtrar apenas o detector de tipos inseguros
   const analistaTiposInseguros = registroAnalistas.find(a => (a as {
@@ -82,11 +88,12 @@ async function executarFixTypes(options: FixTypesOptions): Promise<void> {
   // Executar análise com todos os analistas mas vamos filtrar depois
   let resultado;
   try {
+    const tecnicasParaExec = asTecnicas(registroAnalistas as import('@').Tecnica[]);
     resultado = await iniciarInquisicao(process.cwd(), {
       includeContent: true,
       incluirMetadados: false,
       skipExec: false
-    });
+    }, tecnicasParaExec);
   } catch (err) {
     log.erro(`Erro ao executar análise: ${err instanceof Error ? err.message : String(err)}`);
     sair(ExitCode.Failure);
@@ -337,13 +344,14 @@ async function executarFixTypes(options: FixTypesOptions): Promise<void> {
 
   // Salvar detalhes em arquivo para análise
   if (verbose) {
-    const fs = await import('node:fs/promises');
-    const path = await import('node:path');
-    const reportCaminho = path.join(PROJETO_RAIZ, '.sensei', 'fix-types-analise.json');
-    await fs.mkdir(path.dirname(reportCaminho), {
-      recursive: true
-    });
-    await fs.writeFile(reportCaminho, JSON.stringify({
+    try {
+      const fs = await import('node:fs/promises');
+      const path = await import('node:path');
+      const reportCaminho = path.join(PROJETO_RAIZ, '.sensei', 'fix-types-analise.json');
+      await fs.mkdir(path.dirname(reportCaminho), {
+        recursive: true
+      });
+      await fs.writeFile(reportCaminho, JSON.stringify({
       timestamp: new Date().toISOString(),
       stats,
       mediaConfianca,
@@ -358,8 +366,11 @@ async function executarFixTypes(options: FixTypesOptions): Promise<void> {
         variantes: c.variantes || []
       }))
     }, null, 2));
-    log.info(MENSAGENS_CLI_CORRECAO_TIPOS.analiseDetalhadaSalva);
-    log.info(MENSAGENS_CLI_CORRECAO_TIPOS.linhaEmBranco);
+      log.info(MENSAGENS_CLI_CORRECAO_TIPOS.analiseDetalhadaSalva);
+      log.info(MENSAGENS_CLI_CORRECAO_TIPOS.linhaEmBranco);
+    } catch (err) {
+      log.aviso(`Não foi possível salvar análise detalhada: ${err instanceof Error ? err.message : String(err)}`);
+    }
   }
 
   // Exibir casos de alta prioridade
@@ -406,12 +417,13 @@ async function executarFixTypes(options: FixTypesOptions): Promise<void> {
     console.log();
     log.fase?.(MENSAGENS_CLI_CORRECAO_TIPOS.aplicandoCorrecoesAuto);
     log.info(MENSAGENS_CLI_CORRECAO_TIPOS.linhaEmBranco);
-    const {
-      aplicarCorrecoesEmLote
-    } = await import('@analistas/corrections/auto-fix-engine.js');
+    try {
+      const {
+        aplicarCorrecoesEmLote
+      } = await import('@analistas/corrections/auto-fix-engine.js');
 
-    // Agrupar ocorrências por arquivo
-    const porArquivo: Record<string, Array<{
+      // Agrupar ocorrências por arquivo
+      const porArquivo: Record<string, Array<{
       ocorrencia: Ocorrencia;
       categoria: 'legitimo' | 'melhoravel' | 'corrigir';
       confianca: number;
@@ -449,8 +461,13 @@ async function executarFixTypes(options: FixTypesOptions): Promise<void> {
       log.erro(MENSAGENS_CLI_CORRECAO_TIPOS.correcoesResumoFalhas(resultado.falhas));
     }
     console.log();
-    log.info(MENSAGENS_AUTOFIX.dicas.executarLint);
-    log.info(MENSAGENS_AUTOFIX.dicas.executarBuild);
+      log.info(MENSAGENS_AUTOFIX.dicas.executarLint);
+      log.info(MENSAGENS_AUTOFIX.dicas.executarBuild);
+    } catch (err) {
+      log.erro(`Erro ao aplicar correções: ${err instanceof Error ? err.message : String(err)}`);
+      sair(ExitCode.Failure);
+      return;
+    }
   } else if (isDryRun) {
     // Modo dry-run - apenas mostrar o que seria feito
     console.log();
@@ -475,29 +492,33 @@ async function executarFixTypes(options: FixTypesOptions): Promise<void> {
     console.log();
     log.fase?.(MENSAGENS_CLI_CORRECAO_TIPOS.exportandoRelatorios);
 
-    // Converter ocorrenciasCategorizadas para CasoTipoInseguro
-    const casosParaExport: CasoTipoInseguro[] = ocorrenciasCategorizadas.map(item => ({
-      arquivo: item.ocorrencia.relPath || 'desconhecido',
-      linha: item.ocorrencia.linha,
-      tipo: item.ocorrencia.tipo as 'tipo-inseguro-any' | 'tipo-inseguro-unknown',
-      categoria: item.categoria,
-      confianca: item.confianca,
-      motivo: item.motivo,
-      sugestao: item.sugestao,
-      variantes: item.variantes,
-      contexto: 'contexto' in item.ocorrencia ? (item.ocorrencia as {
-        contexto?: string;
-      }).contexto : undefined
-    }));
-    const resultado = await exportarRelatoriosFixTypes({
-      baseDir: PROJETO_RAIZ,
-      casos: casosParaExport,
-      stats,
-      minConfidence,
-      verbose: Boolean(verbose)
-    });
-    if (resultado) {
-      console.log();
+    try {
+      // Converter ocorrenciasCategorizadas para CasoTipoInseguro
+      const casosParaExport: CasoTipoInseguro[] = ocorrenciasCategorizadas.map(item => ({
+        arquivo: item.ocorrencia.relPath || 'desconhecido',
+        linha: item.ocorrencia.linha,
+        tipo: item.ocorrencia.tipo as 'tipo-inseguro-any' | 'tipo-inseguro-unknown',
+        categoria: item.categoria,
+        confianca: item.confianca,
+        motivo: item.motivo,
+        sugestao: item.sugestao,
+        variantes: item.variantes,
+        contexto: 'contexto' in item.ocorrencia ? (item.ocorrencia as {
+          contexto?: string;
+        }).contexto : undefined
+      }));
+      const resultado = await exportarRelatoriosFixTypes({
+        baseDir: PROJETO_RAIZ,
+        casos: casosParaExport,
+        stats,
+        minConfidence,
+        verbose: Boolean(verbose)
+      });
+      if (resultado) {
+        console.log();
+      }
+    } catch (err) {
+      log.aviso(`Erro ao exportar relatórios: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 

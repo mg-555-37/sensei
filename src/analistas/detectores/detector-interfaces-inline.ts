@@ -17,6 +17,14 @@ import { DetectorInterfacesInlineMensagens } from '@core/messages/analistas/dete
 
 import type { Analista, InterfaceInlineDetection, Ocorrencia } from '@';
 
+/** Ocorrência de tipo inline extraída do código (evita tipo duplicado em vários pontos). */
+interface InlineTypeOccurrence {
+  tipo: string;
+  estrutura: string;
+  linha: number;
+  contexto: string;
+}
+
 const ANALISTA: Analista = {
   nome: 'detector-interfaces-inline',
   categoria: 'code-organization',
@@ -305,18 +313,8 @@ function extractTypeStructure(tipoString: string): string {
 /**
  * Extrai todos os tipos inline do código com estrutura normalizada
  */
-function extractAllInlineTypes(src: string): Array<{
-  tipo: string;
-  estrutura: string;
-  linha: number;
-  contexto: string;
-}> {
-  const tipos: Array<{
-    tipo: string;
-    estrutura: string;
-    linha: number;
-    contexto: string;
-  }> = [];
+function extractAllInlineTypes(src: string): InlineTypeOccurrence[] {
+  const tipos: InlineTypeOccurrence[] = [];
 
   // Pattern melhorado para capturar objetos tipo literal (incluindo multi-linha)
   // Procura por padrões como: { prop: type, ... } em contextos de tipo
@@ -395,21 +393,14 @@ function extractAllInlineTypes(src: string): Array<{
 /**
  * Encontra tipos inline duplicados com base na estrutura normalizada
  */
-function findDuplicateTypes(tipos: Array<{
-  tipo: string;
-  estrutura: string;
-  linha: number;
-  contexto: string;
-}>): Map<string, Array<{
+interface DuplicateEntry {
   linha: number;
   tipo: string;
   contexto: string;
-}>> {
-  const mapa = new Map<string, Array<{
-    linha: number;
-    tipo: string;
-    contexto: string;
-  }>>();
+}
+
+function findDuplicateTypes(tipos: InlineTypeOccurrence[]): Map<string, DuplicateEntry[]> {
+  const mapa = new Map<string, DuplicateEntry[]>();
 
   // Agrupar por estrutura normalizada (não por tipo literal exato)
   for (const {
@@ -432,11 +423,7 @@ function findDuplicateTypes(tipos: Array<{
   }
 
   // Filtrar apenas duplicados significativos
-  const duplicados = new Map<string, Array<{
-    linha: number;
-    tipo: string;
-    contexto: string;
-  }>>();
+  const duplicados = new Map<string, DuplicateEntry[]>();
   for (const [estrutura, ocorrencias] of mapa.entries()) {
     // Critérios mais refinados:
     // - >= 4 ocorrências: duplicação clara que deve ser extraída

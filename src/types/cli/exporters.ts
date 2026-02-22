@@ -255,3 +255,38 @@ export interface ResultadoSharding {
     tamanhoTotal: number;
   };
 }
+
+/* ================================
+   SVG OTIMIZAÇÃO EXPORTER TYPES
+   ================================ */
+
+/**
+ * Candidato à otimização de SVG (relatório de otimização).
+ */
+export interface SvgCandidate {
+  relPath: string;
+  dir: string;
+  originalBytes: number;
+  optimizedBytes: number;
+  savedBytes: number;
+  mudancas: string[];
+  temViewBox: boolean;
+}
+
+/**
+ * Resultado da exportação do relatório de otimização SVG.
+ */
+export interface SvgExportResult {
+  outputCaminho: string;
+  totalArquivos: number;
+  totalEconomiaBytes: number;
+}
+
+/**
+ * Estatísticas por diretório no relatório SVG.
+ */
+export interface SvgDirectoryStats {
+  count: number;
+  totalSaved: number;
+  exemplos: SvgCandidate[];
+}

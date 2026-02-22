@@ -21,14 +21,22 @@ const __infoD = (msg: string) => {
   if (typeof l.infoDestaque === 'function') return l.infoDestaque(msg);
   return l.info(msg);
 };
+/** Interface mínima para emissão de eventos (compatível com EventEmitter ou objeto custom). */
+export interface ExecutorEventEmitter {
+  emit(event: string, data?: unknown): void;
+}
+
 export async function executarInquisicao(fileEntriesComAst: FileEntryWithAst[], tecnicas: Tecnica[], baseDir: string, guardianResultado: GuardianResult, opts?: {
   verbose?: boolean;
   compact?: boolean;
   fast?: boolean;
+  /** Opcional: emissor de eventos para file:processed e analysis:complete */
+  events?: ExecutorEventEmitter;
 }): Promise<ResultadoInquisicao> {
   const ocorrencias: Ocorrencia[] = [];
   const metricasAnalistas: MetricaAnalista[] = [];
   const arquivosValidosSet = new Set(fileEntriesComAst.map(f => f.relPath));
+  const emitter = opts?.events;
   const contextoGlobalBase: ContextoExecucao = {
     baseDir,
     arquivos: fileEntriesComAst,
@@ -214,7 +222,7 @@ export async function executarInquisicao(fileEntriesComAst: FileEntryWithAst[], 
     };
 
     // Retorna resultado do processamento paralelo
-    return {
+    const resultadoFast: ResultadoInquisicao = {
       totalArquivos: fileEntriesComAst.length,
       arquivosAnalisados: fileEntriesComAst.map(e => e.relPath),
       ocorrencias,
@@ -222,6 +230,10 @@ export async function executarInquisicao(fileEntriesComAst: FileEntryWithAst[], 
       duracaoMs: duracaoTotal,
       metricas: metricasExecucao
     };
+    if (emitter) {
+      emitter.emit('analysis:complete', resultadoFast);
+    }
+    return resultadoFast;
   }
 
   // Técnicas por arquivo (modo sequencial padrão)
@@ -437,6 +449,10 @@ export async function executarInquisicao(fileEntriesComAst: FileEntryWithAst[], 
 
     // 🎯 NOVO: Atualiza progresso por arquivo (não por analista)
     logAnalistas.arquivoProcessado();
+    if (emitter) {
+      const ocorrArquivo = ocorrencias.filter(o => o.relPath === entry.relPath);
+      emitter.emit('file:processed', { relPath: entry.relPath, ocorrencias: ocorrArquivo.length });
+    }
   }
   const fimExecucao = performance.now();
   const duracaoMs = Math.round(fimExecucao - inicioExecucao);
@@ -504,7 +520,7 @@ export async function executarInquisicao(fileEntriesComAst: FileEntryWithAst[], 
       }));
     }
   }
-  return {
+  const resultado: ResultadoInquisicao = {
     totalArquivos: fileEntriesComAst.length,
     arquivosAnalisados: fileEntriesComAst.map(e => e.relPath),
     ocorrencias,
@@ -512,6 +528,10 @@ export async function executarInquisicao(fileEntriesComAst: FileEntryWithAst[], 
     duracaoMs,
     metricas: metricasExecucao || undefined
   };
+  if (emitter) {
+    emitter.emit('analysis:complete', resultado);
+  }
+  return resultado;
 }
 
 // Hook simples para expor última métrica de execução (consumido por comando perf baseline)

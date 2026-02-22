@@ -33,7 +33,9 @@ function extrairEntradasDeModulo(mod: unknown): Entry[] {
 
   // Dedup interno por nome
   const byName = new Map<string, Entry>();
-  for (const e of out) byName.set(e.nome!, e);
+  for (const e of out) {
+    if (e.nome) byName.set(e.nome, e);
+  }
   return Array.from(byName.values());
 }
 
@@ -84,7 +86,8 @@ export async function discoverAnalistasPlugins(): Promise<EntradaRegistry[]> {
     // Dedup final por nome
     const byName = new Map<string, EntradaRegistry>();
     for (const r of results) {
-      if (r && typeof (r as Entry).nome === 'string') byName.set((r as Entry).nome!, r);
+      const entry = r as Entry;
+      if (entry?.nome) byName.set(entry.nome, r);
     }
     return Array.from(byName.values());
   } catch {

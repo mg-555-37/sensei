@@ -10,6 +10,19 @@ Todas as mudanças notáveis deste repositório serão documentadas aqui.
 O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
 e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [Unreleased]
+
+### Adicionado
+
+- **Desacoplamento (plano em planejamento/)**:
+  - **IoC no motor**: Comandos da CLI (`podar`, `guardian`, `reestruturar`, `fix-types`, `atualizar`) passam explicitamente a lista de técnicas (`registroAnalistas`) para `iniciarInquisicao`, permitindo que o Core não importe o registro de analistas quando orquestrado pela CLI.
+  - **Eventos no Executor**: `executarInquisicao` aceita opcionalmente `opts.events` (interface `ExecutorEventEmitter`). Quando fornecido, emite `file:processed` (por arquivo) e `analysis:complete` (ao final), permitindo que frontends (CLI, Web, extensões) reajam ao progresso sem acoplar ao Core.
+  - **Autodiscovery de plugins**: Já existente; analistas em `src/analistas/plugins/` com prefixo `analista-` ou `detector-` são descobertos automaticamente e mesclados ao registro.
+
+### Alterado
+
+- **Names/Rename fragmentados**: Em projetos grandes, o comando `names` passa a gerar uma estrutura em `names/` espelhando `src/` (um `.txt` por arquivo fonte), em vez de um único `name.txt` monolítico. O `rename` usa `names/name.txt` se existir (retrocompatível), caso contrário agrega todos os `names/**/*.txt`. Opção `names --legacy` gera também o arquivo único `names/name.txt`.
+
 ## [0.3.9] - 2026-02-19
 
 ### Adicionado

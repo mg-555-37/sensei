@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+import { registroAnalistas } from '@analistas/registry/registry.js';
 import { ExitCode, sair } from '@cli/helpers/exit-codes.js';
 import chalk from '@core/config/chalk-safe.js';
 import { config } from '@core/config/config.js';
@@ -8,7 +9,8 @@ import { executarShellSeguro } from '@core/utils/exec-safe.js';
 import { scanSystemIntegrity } from '@guardian/sentinela.js';
 import { Command } from 'commander';
 
-import type { FileEntryWithAst } from '@';
+import type { FileEntryWithAst, Tecnica } from '@';
+import { asTecnicas } from '@';
 
 export function comandoAtualizar(
   aplicarFlagsGlobais: (opts: Record<string, unknown>) => void,
@@ -37,9 +39,10 @@ export function comandoAtualizar(
       let fileEntries: FileEntryWithAst[] = [];
 
       try {
+        const tecnicas = asTecnicas(registroAnalistas as Tecnica[]);
         const resultado = await iniciarInquisicao(baseDir, {
           incluirMetadados: false,
-        });
+        }, tecnicas);
         fileEntries = resultado.fileEntries;
 
         const guardianResultado = await scanSystemIntegrity(fileEntries);

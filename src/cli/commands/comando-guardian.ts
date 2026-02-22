@@ -2,6 +2,7 @@
 // @sensei-disable tipo-literal-inline-complexo
 // Justificativa: tipos inline para opções de comando CLI são locais e não precisam de extração
 // Importar handler modular do Guardian (Sprint 2)
+import { registroAnalistas } from '@analistas/registry/registry.js';
 import { executarGuardian as executarGuardianModular, type GuardianOptions } from '@cli/diagnostico/handlers/guardian-handler.js';
 import { ExitCode, sair } from '@cli/helpers/exit-codes.js';
 import { config } from '@core/config/config.js';
@@ -11,8 +12,8 @@ import { log, logGuardian } from '@core/messages/index.js';
 import { acceptNewBaseline } from '@guardian/sentinela.js';
 import { Command } from 'commander';
 
-import type { FileEntry, FileEntryWithAst } from '@';
-import { extrairMensagemErro, IntegridadeStatus } from '@';
+import type { FileEntry, FileEntryWithAst, Tecnica } from '@';
+import { asTecnicas, extrairMensagemErro, IntegridadeStatus } from '@';
 
 export function comandoGuardian(aplicarFlagsGlobais: (opts: Record<string, unknown>) => void): Command {
   return new Command('guardian').description('Gerencia e verifica a integridade do ambiente do Sensei.')
@@ -33,9 +34,10 @@ export function comandoGuardian(aplicarFlagsGlobais: (opts: Record<string, unkno
     const baseDir = process.cwd();
     let fileEntries: FileEntryWithAst[] = [];
     try {
+      const tecnicas = asTecnicas(registroAnalistas as Tecnica[]);
       const resultadoInquisicao = await iniciarInquisicao(baseDir, {
         incluirMetadados: false
-      });
+      }, tecnicas);
       fileEntries = resultadoInquisicao.fileEntries;
       const ignoradosOriginaisRaw = (config as {
         GUARDIAN_IGNORE_PATTERNS?: string[];

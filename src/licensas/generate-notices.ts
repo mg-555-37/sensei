@@ -130,16 +130,12 @@ export async function generateNotices({
   if (!results) {
     try {
       const {
-        createRequire
-      } = await import('node:module');
-      const require = createRequire(import.meta.url);
-      const {
         stdout
       } = await execFile('npx', ['--yes', 'license-checker-rseidelsohn', '--production', '--json'], {
         maxBuffer: 10 * 1024 * 1024
       });
       results = JSON.parse(stdout);
-    } catch (e) {
+    } catch {
       try {
         const cmd = 'npx --yes license-checker-rseidelsohn --production --json';
         const {
@@ -148,7 +144,7 @@ export async function generateNotices({
           maxBuffer: 10 * 1024 * 1024
         });
         results = JSON.parse(stdout);
-      } catch (err) {
+      } catch {
         throw new Error('Failed to obtain license information via cache, API or npx');
       }
     }

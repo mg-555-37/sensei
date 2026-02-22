@@ -20,7 +20,7 @@ export function exists(p: string): boolean {
  * Returns null on error.
  * @param pkgPath - Path to package.json
  */
-export function readPackageJsonSync(pkgCaminho: string): Record<string, any> | null {
+export function readPackageJsonSync(pkgCaminho: string): Record<string, unknown> | null {
   try {
     const data = fs.readFileSync(pkgCaminho, 'utf8');
     return JSON.parse(data);

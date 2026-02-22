@@ -113,7 +113,8 @@ export async function verifyDisclaimer({
     missing
   };
 }
-export default {
+const disclaimerModule = {
   addDisclaimer,
   verifyDisclaimer
 };
+export default disclaimerModule;

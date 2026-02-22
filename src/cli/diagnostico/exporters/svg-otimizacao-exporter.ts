@@ -4,30 +4,9 @@ import path from 'node:path';
 
 import { otimizarSvgLikeSvgo, shouldSugerirOtimizacaoSvg } from '@shared/impar/svgs.js';
 
-import type { FileEntryWithAst } from '@';
+import type { FileEntryWithAst, SvgCandidate, SvgDirectoryStats, SvgExportResult } from '@';
 
-/**
- * Representa um candidato à otimização de SVG
- */
-export type SvgCandidate = {
-  relPath: string;
-  dir: string;
-  originalBytes: number;
-  optimizedBytes: number;
-  savedBytes: number;
-  mudancas: string[];
-  temViewBox: boolean;
-};
-export type SvgExportResult = {
-  outputCaminho: string;
-  totalArquivos: number;
-  totalEconomiaBytes: number;
-};
-type SvgDirectoryStats = {
-  count: number;
-  totalSaved: number;
-  exemplos: SvgCandidate[];
-};
+export type { SvgCandidate, SvgExportResult };
 function formatBytes(bytes: number): string {
   if (!Number.isFinite(bytes) || bytes < 0) return String(bytes);
   if (bytes < 1024) return `${bytes}B`;

@@ -473,8 +473,8 @@ sensei diagnosticar --scan-only
 - `otimizar-svg` — otimização de arquivos SVG
 - `atualizar` — atualização segura com verificação de integridade
 - `reverter` — gerenciamento de mapa de reversão para reestruturação
-- `names` — extração de nomes de variáveis para mapeamento
-- `rename` — aplicação de renomeações em massa
+- `names` — extração de nomes de variáveis para mapeamento (estrutura fragmentada em `names/`, espelhando `src/`; use `--legacy` para gerar também `names/name.txt`)
+- `rename` — aplicação de renomeações em massa (lê `names/name.txt` se existir, senão agrega todos os `names/**/*.txt`)
 
 ## ⚙️ Flags globais
 
